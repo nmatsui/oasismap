@@ -1,6 +1,7 @@
 'use client'
 import React, { useContext, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { signOut, useSession } from 'next-auth/react'
 import {
   Checkbox,
   Button,
@@ -12,6 +13,10 @@ import {
 } from '@mui/material'
 
 import { messageContext } from '@/contexts/message-context'
+import { MessageType } from '@/types/message-type'
+import { ERROR_TYPE } from '@/libs/constants'
+import { postData } from '@/libs/fetch'
+import { getCurrentPosition } from '@/libs/geolocation'
 
 type HappinessKey =
   | 'happiness1'
@@ -21,11 +26,14 @@ type HappinessKey =
   | 'happiness5'
   | 'happiness6'
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
+
 const HappinessInput: React.FC = () => {
   const noticeMessageContext = useContext(messageContext)
   const router = useRouter()
   const searchParams = useSearchParams()
   const referral = searchParams.get('referral') || 'me'
+  const { update } = useSession()
 
   const [checkboxValues, setCheckboxValues] = useState<{
     [key in HappinessKey]: number
@@ -55,9 +63,43 @@ const HappinessInput: React.FC = () => {
     setCheckboxValues((prev) => ({ ...prev, [key]: prev[key] ? 0 : 1 }))
   }
 
-  const submitForm = () => {
-    noticeMessageContext.showMessage('幸福度の送信が完了しました')
-    router.push(`/happiness/${referral}`)
+  const submitForm = async () => {
+    try {
+      const position = await getCurrentPosition()
+      const url = backendUrl + '/api/happiness'
+      // アクセストークンを再取得
+      const updatedSession = await update()
+
+      await postData(
+        url,
+        {
+          latitude: position.latitude!,
+          longitude: position.longitude!,
+          answers: checkboxValues,
+        },
+        updatedSession?.user?.accessToken!
+      )
+      noticeMessageContext.showMessage(
+        '幸福度の送信が完了しました',
+        MessageType.Success
+      )
+      router.push(`/happiness/${referral}`)
+    } catch (error) {
+      console.error('Error:', error)
+      if (error instanceof Error && error.message === ERROR_TYPE.UNAUTHORIZED) {
+        noticeMessageContext.showMessage(
+          '再ログインしてください',
+          MessageType.Error
+        )
+        signOut({ redirect: false })
+        router.push('/login')
+      } else {
+        noticeMessageContext.showMessage(
+          '幸福度の送信に失敗しました',
+          MessageType.Error
+        )
+      }
+    }
   }
 
   return (

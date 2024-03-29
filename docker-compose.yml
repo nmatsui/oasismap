@@ -1,4 +1,4 @@
-version: "3"
+version: "3.8"
 
 services:
   backend:
@@ -17,21 +17,32 @@ services:
       - "4000:4000"
     command: >
       sh -c "
-      npm install &&
+      npm ci &&
       npm run start"
     environment:
       - "API_PORT=4000"
       - "ORION_URI=http://orion:1026"
+      - "ORION_FIWARE_SERVICE=Government"
+      - "ORION_FIWARE_SERVICE_PATH=/Happiness"
+      - "ADMIN_KEYCLOAK_CLIENT_ID=${ADMIN_KEYCLOAK_CLIENT_ID}"
+      - "KEYCLOAK_CLIENT_ISSUER=${KEYCLOAK_CLIENT_ISSUER}"
+      - "FRONTEND_URL=${NEXTAUTH_URL}"
       - "POSTGRES_HOST=postgres"
       - "POSTGRES_PORT=5432"
-      - "POSTGRES_USERNAME=${POSTGREUSER}"
+      - "POSTGRES_USER=${POSTGREUSER}"
       - "POSTGRES_PASSWORD=${POSTGREPASSWORD}"
-      - "POSTGRES_DATABASE=postgres"
-      - "TYPEORM_SYNCHRONIZE=false"
+      - "POSTGRES_DATABASE=cygnus"
+      - "REVERSE_GEOCODING_URL=${REVERSE_GEOCODING_URL}"
     volumes:
-      - ./StarSeeker/StarSeeker/backend:/app/backend
+      - ./backend:/app/backend
     networks:
       - backend-network
+    healthcheck:
+      test: "curl -f http://localhost:4000"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   frontend:
     image: node:20.10.0
@@ -40,27 +51,36 @@ services:
     working_dir: /app/frontend
     ports:
       - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
     command: >
       sh -c "
-      cd /app/frontend/externals/StarSeeker/StarSeeker/frontend &&
-      npm install --legacy-peer-deps &&
       cd /app/frontend/ &&
       npm ci && 
       npm run build && 
       npm run start &&
       sleep 30"
     environment:
+      - "NEXTAUTH_URL=${NEXTAUTH_URL}"
+      - "NEXTAUTH_SECRET=${NEXTAUTH_SECRET}"
       - "NEXT_PUBLIC_MAP_DEFAULT_LATITUDE=${MAP_DEFAULT_LATITUDE}"
       - "NEXT_PUBLIC_MAP_DEFAULT_LONGITUDE=${MAP_DEFAULT_LONGITUDE}"
       - "NEXT_PUBLIC_MAP_DEFAULT_ZOOM=${MAP_DEFAULT_ZOOM}"
       - "NEXT_PUBLIC_DATASET_LIST_BY=${DATASET_LIST_BY}"
+      - "NEXT_PUBLIC_BACKEND_URL=${BACKEND_URL}"
+      - "GENERAL_USER_KEYCLOAK_CLIENT_ID=${GENERAL_USER_KEYCLOAK_CLIENT_ID}"
+      - "GENERAL_USER_KEYCLOAK_CLIENT_SECRET=${GENERAL_USER_KEYCLOAK_CLIENT_SECRET}"
+      - "ADMIN_KEYCLOAK_CLIENT_ID=${ADMIN_KEYCLOAK_CLIENT_ID}"
+      - "ADMIN_KEYCLOAK_CLIENT_SECRET=${ADMIN_KEYCLOAK_CLIENT_SECRET}"
+      - "KEYCLOAK_CLIENT_ISSUER=${KEYCLOAK_CLIENT_ISSUER}"
     volumes:
       - ./frontend/:/app/frontend/
     networks:
       - frontend-network
 
   mongo:
-    image: mongo:6.0.12
+    image: mongo:6.0.14
     hostname: mongo
     container_name: mongo
     expose:
@@ -90,8 +110,7 @@ services:
       - "PGDATABASE=postgres"
     volumes:
       - ./site/postgres/data:/var/lib/postgresql/data
-      - ./StarSeeker/StarSeeker/postgres/initdb:/docker-entrypoint-initdb.d
-      - ./operator/env:/work
+      - ./setup/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - backend-network
     healthcheck:
@@ -111,15 +130,19 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - "KEYCLOAK_ADMIN=${POSTGREUSER}" 
-      - "KEYCLOAK_ADMIN_PASSWORD=${POSTGREPASSWORD}"
+      - "KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}" 
+      - "KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}"
       - "KC_DB=postgres"
       - "KC_DB_URL=jdbc:postgresql://postgres:5432/postgres"
       - "KC_DB_USERNAME=${POSTGREUSER}"
       - "KC_DB_PASSWORD=${POSTGREPASSWORD}"
+      - "KC_HOSTNAME_URL=${KC_HOSTNAME_URL}"
+      - "KC_HOSTNAME_ADMIN_URL=${KC_HOSTNAME_ADMIN_URL}"
       - "TZ=Asia/Tokyo"
-    command:
-      - start-dev
+    command: start-dev --features=declarative-user-profile
+    volumes:
+      - ./keycloak/themes:/opt/keycloak/themes
+      - ./keycloak/providers:/opt/keycloak/providers
     networks:
       - backend-network
     healthcheck:
@@ -130,7 +153,7 @@ services:
       start_period: 10s
 
   orion:
-    image: fiware/orion:3.10.1
+    image: fiware/orion:3.11.0
     hostname: orion
     container_name: orion
     expose:
@@ -155,7 +178,7 @@ services:
       start_period: 10s
 
   cygnus:
-    image: fiware/cygnus-ngsi:2.15.0
+    image: fiware/cygnus-ngsi:3.5.0
     hostname: cygnus
     container_name: cygnus
     depends_on:
@@ -168,6 +191,9 @@ services:
       - "CYGNUS_POSTGRESQL_PASS=${POSTGREPASSWORD}"
       - "CYGNUS_POSTGRESQL_ENABLE_CACHE=true"
       - "CYGNUS_POSTGRESQL_SERVICE_PORT=5055"
+      - "CYGNUS_POSTGRESQL_DATABASE=cygnus"
+      - "CYGNUS_POSTGRESQL_DATA_MODEL=dm-by-service-path"
+      - "CYGNUS_POSTGRESQL_ATTR_PERSISTENCE=column"
       - "CYGNUS_LOG_LEVEL=DEBUG"
       - "CYGNUS_SERVICE_PORT=5055"
       - "CYGNUS_API_PORT=5080"

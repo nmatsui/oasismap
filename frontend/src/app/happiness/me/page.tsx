@@ -1,60 +1,87 @@
 'use client'
 import dynamic from 'next/dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { useRouter } from 'next/navigation'
+import { signOut, useSession } from 'next-auth/react'
 import { Button, ButtonGroup, Grid } from '@mui/material'
 import { PeriodType } from '@/types/period'
+import { MessageType } from '@/types/message-type'
 import { ResponsiveContainer } from 'recharts'
-//import Map from '@/components/happiness/map'
 const MapSet = dynamic(() => import('@/components/map/mapset'), { ssr: false })
 import { GetPin, COLORS } from '@/components/utils/pin'
 import {
   DateTimeTextbox,
-  useDateTime,
+  useDateTimeProps,
 } from '@/components/fields/date-time-textbox'
 
-import { BarGraph, myHappinessData } from '@/components/happiness/graph'
+const BarGraph = dynamic(() => import('@/components/happiness/bar-graph'), {
+  ssr: false,
+})
+import { myHappinessData } from '@/libs/graph'
+import { messageContext } from '@/contexts/message-context'
+import { ERROR_TYPE } from '@/libs/constants'
+import { fetchData } from '@/libs/fetch'
+import { toDateTime } from '@/libs/date-converter'
+import { useTokenFetchStatus } from '@/hooks/token-fetch-status'
+
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
 
 const HappinessMe: React.FC = () => {
+  const noticeMessageContext = useContext(messageContext)
   const router = useRouter()
   const [period, setPeriod] = useState(PeriodType.Month)
   const [pinData, setPinData] = useState<any>([])
   const [MyHappiness, setMyHappiness] = useState<any>([])
+  const { isTokenFetched } = useTokenFetchStatus()
+  const { startProps, endProps, updatedPeriod } = useDateTimeProps(period)
+  const { update } = useSession()
 
-  useEffect(() => {
-    Start()
-  }, [])
-
-  const Start = async () => {
-    const backendUrl = 'http://localhost:8000/api/happiness/me'
-
+  const getData = async () => {
     try {
-      const response = await fetch(`${backendUrl}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
+      const url = backendUrl + '/api/happiness/me'
+      const startDateTime = toDateTime(startProps.value).toISO()
+      const endDateTime = toDateTime(endProps.value).endOf('minute').toISO()
+      // 日付の変換に失敗した場合
+      if (!startDateTime || !endDateTime) {
+        console.error('Date conversion failed.')
+        return
+      }
+      // アクセストークンを再取得
+      const updatedSession = await update()
+
+      const data = await fetchData(
+        url,
+        {
+          start: startDateTime,
+          end: endDateTime,
         },
-      })
-
-      const data = await response.json()
-      const pinDataResult = GetPin(data)
-      const myHappinessResult = myHappinessData(data)
-
-      setPinData(pinDataResult)
-      setMyHappiness(myHappinessResult)
+        updatedSession?.user?.accessToken!
+      )
+      setPinData(GetPin(data))
+      setMyHappiness(myHappinessData(data))
     } catch (error) {
       console.error('Error fetching data:', error)
+      if (error instanceof Error && error.message === ERROR_TYPE.UNAUTHORIZED) {
+        noticeMessageContext.showMessage(
+          '再ログインしてください',
+          MessageType.Error
+        )
+        signOut({ redirect: false })
+        router.push('/login')
+      } else {
+        noticeMessageContext.showMessage(
+          '幸福度の検索に失敗しました',
+          MessageType.Error
+        )
+      }
     }
   }
 
-  const startDateTimeProps = useDateTime({
-    date: '2024-01-26',
-    time: '09:00',
-  })
-  const endDateTimeProps = useDateTime({
-    date: '2024-01-27',
-    time: '12:00',
-  })
+  useEffect(() => {
+    if (!isTokenFetched) return
+    getData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTokenFetched, updatedPeriod])
 
   const renderCustomDayTick = (tickProps: any) => {
     const { x, y, payload } = tickProps
@@ -67,28 +94,6 @@ const HappinessMe: React.FC = () => {
       )
     }
     return null
-  }
-
-  const handleSearch = async () => {
-    const backendUrl = 'http://localhost:8000/api/happiness/me'
-
-    try {
-      const response = await fetch(`${backendUrl}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      const data = await response.json()
-      const pinDataResult = GetPin(data)
-      const myHappinessResult = myHappinessData(data)
-
-      setPinData(pinDataResult)
-      setMyHappiness(myHappinessResult)
-    } catch (error) {
-      console.error('Error fetching data:', error)
-    }
   }
 
   return (
@@ -126,11 +131,9 @@ const HappinessMe: React.FC = () => {
             minHeight: '300px',
           }}
         >
-          グラフ表示エリア
           <ResponsiveContainer width="100%" height={300}>
             <BarGraph
               plotdata={MyHappiness[period]}
-              title="時間"
               color={COLORS}
               xTickFormatter={renderCustomDayTick}
             />
@@ -178,14 +181,16 @@ const HappinessMe: React.FC = () => {
             <DateTimeTextbox
               dateLabel="開始日"
               timeLabel="時間"
-              {...startDateTimeProps}
+              period={period}
+              {...startProps}
             />
           </Grid>
           <Grid item xs={12} md={12} lg={8}>
             <DateTimeTextbox
               dateLabel="終了日"
               timeLabel="時間"
-              {...endDateTimeProps}
+              period={period}
+              {...endProps}
             />
           </Grid>
           <Grid container item xs={12} md={12} lg={8} columnSpacing={1}>
@@ -195,7 +200,7 @@ const HappinessMe: React.FC = () => {
                 variant="outlined"
                 fullWidth
                 sx={{ borderColor: 'primary.light' }}
-                onClick={handleSearch}
+                onClick={getData}
               >
                 検索
               </Button>

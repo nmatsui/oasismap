@@ -3,40 +3,17 @@ import {
   TileLayer,
   ZoomControl,
   useMap,
+  useMapEvents,
   Marker,
   Popup,
   LayersControl,
   LayerGroup,
 } from 'react-leaflet'
 import { LatLngTuple } from 'leaflet'
-import React from 'react'
+import React, { useState, useEffect, Dispatch, SetStateAction } from 'react'
 import 'leaflet/dist/leaflet.css'
-import {
-  redIcon,
-  blueIcon,
-  greenIcon,
-  yellowIcon,
-  orangeIcon,
-  violetIcon,
-} from '../utils/marker'
-const getIconByType = (type: string) => {
-  switch (type) {
-    case 'happiness1':
-      return blueIcon
-    case 'happiness2':
-      return greenIcon
-    case 'happiness3':
-      return violetIcon
-    case 'happiness4':
-      return yellowIcon
-    case 'happiness5':
-      return orangeIcon
-    case 'happiness6':
-      return redIcon
-    default:
-      return redIcon
-  }
-}
+import { getIconByType } from '../utils/Icon'
+import { getCurrentPosition } from '../../libs/geolocation'
 
 const loadEnvAsNumber = (
   variable: string | undefined,
@@ -48,20 +25,10 @@ const loadEnvAsNumber = (
   return value
 }
 
-const defaultLatitude = loadEnvAsNumber(
-  String(process.env.NEXT_PUBLIC_MAP_DEFAULT_LATITUDE),
-  35.6581107
-)
-const defaultLongitude = loadEnvAsNumber(
-  String(process.env.NEXT_PUBLIC_MAP_DEFAULT_LONGITUDE),
-  139.7387888
-)
 const defaultZoom = loadEnvAsNumber(
   String(process.env.NEXT_PUBLIC_MAP_DEFAULT_ZOOM),
   13
 )
-
-const defaultPosition: LatLngTuple = [defaultLatitude, defaultLongitude]
 
 type Props = {
   pointEntities: any[]
@@ -71,6 +38,7 @@ type Props = {
     servicePath: string
   }
   pinData: any[]
+  setZoomLevel?: Dispatch<SetStateAction<number>>
 }
 
 const ClosePopup = () => {
@@ -79,7 +47,22 @@ const ClosePopup = () => {
   return null
 }
 
-const questionTitle = {
+const ZoomLevel: React.FC<{
+  setZoomLevel?: Dispatch<SetStateAction<number>>
+}> = ({ setZoomLevel }) => {
+  const map = useMapEvents({
+    zoomend: () => {
+      if (!setZoomLevel) return
+      setZoomLevel(map.getZoom())
+    },
+  })
+  return null
+}
+
+interface QuestionTitles {
+  [key: string]: string
+}
+const questionTitles: QuestionTitles = {
   happiness1: 'ワクワクする場所',
   happiness2: '発見の学びの場所',
   happiness3: 'ホッとする場所',
@@ -88,17 +71,116 @@ const questionTitle = {
   happiness6: '思い出の場所',
 }
 
-const MapSet: React.FC<Props> = ({ pinData }) => {
-  const h1 = pinData.filter((pin) => pin.type === 'happiness1')
-  const h2 = pinData.filter((pin) => pin.type === 'happiness2')
-  const h3 = pinData.filter((pin) => pin.type === 'happiness3')
-  const h4 = pinData.filter((pin) => pin.type === 'happiness4')
-  const h5 = pinData.filter((pin) => pin.type === 'happiness5')
-  const h6 = pinData.filter((pin) => pin.type === 'happiness6')
+export { questionTitles }
+
+const MapOverlay = ({
+  type,
+  filteredPins,
+}: {
+  type: string
+  filteredPins: any[]
+}) => (
+  <LayersControl.Overlay checked name={type}>
+    <LayerGroup>
+      {filteredPins.map((pin, index) => (
+        <Marker
+          key={index}
+          position={[pin.latitude, pin.longitude]}
+          icon={getIconByType(pin.type, pin.answer)}
+        >
+          <Popup>
+            <table border={1}>
+              {pin.basetime && (
+                <thead>
+                  <tr>
+                    <th>回答日時</th>
+                    <th>{pin.timestamp}</th>
+                  </tr>
+                </thead>
+              )}
+              <tbody>
+                <tr>
+                  <th>{questionTitles.happiness1}</th>
+                  <th>{pin.answer1}</th>
+                </tr>
+                <tr>
+                  <th>{questionTitles.happiness2}</th>
+                  <th>{pin.answer2}</th>
+                </tr>
+                <tr>
+                  <th>{questionTitles.happiness3}</th>
+                  <th>{pin.answer3}</th>
+                </tr>
+                <tr>
+                  <th>{questionTitles.happiness4}</th>
+                  <th>{pin.answer4}</th>
+                </tr>
+                <tr>
+                  <th>{questionTitles.happiness5}</th>
+                  <th>{pin.answer5}</th>
+                </tr>
+                <tr>
+                  <th>{questionTitles.happiness6}</th>
+                  <th>{pin.answer6}</th>
+                </tr>
+              </tbody>
+            </table>
+          </Popup>
+        </Marker>
+      ))}
+    </LayerGroup>
+  </LayersControl.Overlay>
+)
+
+const MapSet: React.FC<Props> = ({ pinData, setZoomLevel }) => {
+  const [currentPosition, setCurrentPosition] = useState<LatLngTuple | null>(
+    null
+  )
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const positionResult = await getCurrentPosition()
+
+        if (
+          positionResult &&
+          positionResult.latitude !== undefined &&
+          positionResult.longitude !== undefined
+        ) {
+          const newPosition: LatLngTuple = [
+            positionResult.latitude,
+            positionResult.longitude,
+          ]
+          setCurrentPosition(newPosition)
+        } else {
+          console.error('Error: Unable to get current position.')
+          setError(new Error('Unable to get current position'))
+        }
+      } catch (error) {
+        console.error('Error in getCurrentPosition:', error)
+        setError(error as Error)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  if (error) {
+    console.error('Error: Unable to get current position.', error)
+    return null
+  }
+
+  if (currentPosition === null) {
+    return <p>Loading...</p>
+  }
+
+  const filteredPinsByType = (type: string) =>
+    pinData.filter((pin) => pin.type === type)
 
   return (
     <MapContainer
-      center={defaultPosition}
+      center={currentPosition}
       zoom={defaultZoom}
       scrollWheelZoom={true}
       zoomControl={false}
@@ -107,106 +189,20 @@ const MapSet: React.FC<Props> = ({ pinData }) => {
       <TileLayer
         attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        maxZoom={18}
+        minZoom={10}
       />
       <LayersControl position="topright">
-        <LayersControl.Overlay checked name={questionTitle['happiness1']}>
-          <LayerGroup>
-            {h1.map((pin, index) => (
-              <Marker
-                key={index}
-                position={[pin.latitude, pin.longitude]}
-                icon={getIconByType(pin.type)}
-              >
-                <Popup>
-                  <p>{pin.title}</p>
-                </Popup>
-              </Marker>
-            ))}
-          </LayerGroup>
-        </LayersControl.Overlay>
-
-        <LayersControl.Overlay checked name={questionTitle['happiness2']}>
-          <LayerGroup>
-            {h2.map((pin, index) => (
-              <Marker
-                key={index}
-                position={[pin.latitude, pin.longitude]}
-                icon={getIconByType(pin.type)}
-              >
-                <Popup>
-                  <p>{pin.title}</p>
-                </Popup>
-              </Marker>
-            ))}
-          </LayerGroup>
-        </LayersControl.Overlay>
-
-        <LayersControl.Overlay checked name={questionTitle['happiness3']}>
-          <LayerGroup>
-            {h3.map((pin, index) => (
-              <Marker
-                key={index}
-                position={[pin.latitude, pin.longitude]}
-                icon={getIconByType(pin.type)}
-              >
-                <Popup>
-                  <p>{pin.title}</p>
-                </Popup>
-              </Marker>
-            ))}
-          </LayerGroup>
-        </LayersControl.Overlay>
-
-        <LayersControl.Overlay checked name={questionTitle['happiness4']}>
-          <LayerGroup>
-            {h4.map((pin, index) => (
-              <Marker
-                key={index}
-                position={[pin.latitude, pin.longitude]}
-                icon={getIconByType(pin.type)}
-              >
-                <Popup>
-                  <p>{pin.title}</p>
-                </Popup>
-              </Marker>
-            ))}
-          </LayerGroup>
-        </LayersControl.Overlay>
-
-        <LayersControl.Overlay checked name={questionTitle['happiness5']}>
-          <LayerGroup>
-            {h5.map((pin, index) => (
-              <Marker
-                key={index}
-                position={[pin.latitude, pin.longitude]}
-                icon={getIconByType(pin.type)}
-              >
-                <Popup>
-                  <p>{pin.title}</p>
-                </Popup>
-              </Marker>
-            ))}
-          </LayerGroup>
-        </LayersControl.Overlay>
-
-        <LayersControl.Overlay checked name={questionTitle['happiness6']}>
-          <LayerGroup>
-            {h6.map((pin, index) => (
-              <Marker
-                key={index}
-                position={[pin.latitude, pin.longitude]}
-                icon={getIconByType(pin.type)}
-              >
-                <Popup>
-                  <p>{pin.title}</p>
-                </Popup>
-              </Marker>
-            ))}
-          </LayerGroup>
-        </LayersControl.Overlay>
+        {Object.keys(questionTitles).map((type) => (
+          <MapOverlay
+            key={type}
+            type={questionTitles[type]}
+            filteredPins={filteredPinsByType(type)}
+          />
+        ))}
       </LayersControl>
-
       <ClosePopup />
+      <ZoomLevel setZoomLevel={setZoomLevel} />
     </MapContainer>
   )
 }

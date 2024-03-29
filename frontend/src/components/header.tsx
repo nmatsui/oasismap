@@ -3,10 +3,22 @@ import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
 import MenuIcon from '@mui/icons-material/Menu'
 import AppBar from '@mui/material/AppBar'
+import { PROFILE_TYPE } from '@/libs/constants'
+import { useSession } from 'next-auth/react'
 
 interface HeaderProps {
   simple?: boolean
   handleDrawerOpen?: () => void
+}
+
+const Nickname = () => {
+  const { data: session } = useSession()
+  const titles = {
+    [PROFILE_TYPE.GENERAL]: ' さん',
+    [PROFILE_TYPE.ADMIN]: '',
+  }
+  const title = titles[session?.user?.type!]
+  return session ? `${session.user!.nickname}${title}` : ''
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -22,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({
         {!simple && (
           <>
             <Typography noWrap component="div">
-              山田太郎 さん
+              <Nickname />
             </Typography>
             <IconButton
               color="inherit"
