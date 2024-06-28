@@ -3,17 +3,17 @@ import {
   TileLayer,
   ZoomControl,
   useMap,
-  useMapEvents,
   Marker,
   Popup,
   LayersControl,
   LayerGroup,
 } from 'react-leaflet'
 import { LatLngTuple } from 'leaflet'
-import React, { useState, useEffect, Dispatch, SetStateAction } from 'react'
+import React, { useState, useEffect } from 'react'
 import 'leaflet/dist/leaflet.css'
-import { getIconByType } from '../utils/Icon'
+import { getIconByType } from '../utils/icon'
 import { getCurrentPosition } from '../../libs/geolocation'
+import { IconType } from '@/types/icon-type'
 
 const loadEnvAsNumber = (
   variable: string | undefined,
@@ -37,25 +37,13 @@ type Props = {
     tenant: string
     servicePath: string
   }
+  iconType: IconType
   pinData: any[]
-  setZoomLevel?: Dispatch<SetStateAction<number>>
 }
 
 const ClosePopup = () => {
   const map = useMap()
   map.closePopup()
-  return null
-}
-
-const ZoomLevel: React.FC<{
-  setZoomLevel?: Dispatch<SetStateAction<number>>
-}> = ({ setZoomLevel }) => {
-  const map = useMapEvents({
-    zoomend: () => {
-      if (!setZoomLevel) return
-      setZoomLevel(map.getZoom())
-    },
-  })
   return null
 }
 
@@ -74,9 +62,11 @@ const questionTitles: QuestionTitles = {
 export { questionTitles }
 
 const MapOverlay = ({
+  iconType,
   type,
   filteredPins,
 }: {
+  iconType: IconType
   type: string
   filteredPins: any[]
 }) => (
@@ -86,7 +76,7 @@ const MapOverlay = ({
         <Marker
           key={index}
           position={[pin.latitude, pin.longitude]}
-          icon={getIconByType(pin.type, pin.answer)}
+          icon={getIconByType(iconType, pin.type, pin.answer)}
         >
           <Popup>
             <table border={1}>
@@ -132,7 +122,7 @@ const MapOverlay = ({
   </LayersControl.Overlay>
 )
 
-const MapSet: React.FC<Props> = ({ pinData, setZoomLevel }) => {
+const Map: React.FC<Props> = ({ iconType, pinData }) => {
   const [currentPosition, setCurrentPosition] = useState<LatLngTuple | null>(
     null
   )
@@ -196,15 +186,15 @@ const MapSet: React.FC<Props> = ({ pinData, setZoomLevel }) => {
         {Object.keys(questionTitles).map((type) => (
           <MapOverlay
             key={type}
+            iconType={iconType}
             type={questionTitles[type]}
             filteredPins={filteredPinsByType(type)}
           />
         ))}
       </LayersControl>
       <ClosePopup />
-      <ZoomLevel setZoomLevel={setZoomLevel} />
     </MapContainer>
   )
 }
 
-export default MapSet
+export default Map

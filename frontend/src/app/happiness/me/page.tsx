@@ -7,8 +7,9 @@ import { Button, ButtonGroup, Grid } from '@mui/material'
 import { PeriodType } from '@/types/period'
 import { MessageType } from '@/types/message-type'
 import { ResponsiveContainer } from 'recharts'
-const MapSet = dynamic(() => import('@/components/map/mapset'), { ssr: false })
-import { GetPin, COLORS } from '@/components/utils/pin'
+const Map = dynamic(() => import('@/components/map/map'), { ssr: false })
+import { GetPin } from '@/components/utils/pin'
+import { graphColors } from '@/theme/color'
 import {
   DateTimeTextbox,
   useDateTimeProps,
@@ -97,7 +98,7 @@ const HappinessMe: React.FC = () => {
   }
 
   return (
-    <Grid container>
+    <Grid container sx={{ paddingBottom: { xs: '50px', md: '0px' } }}>
       <Grid
         container
         item
@@ -105,10 +106,11 @@ const HappinessMe: React.FC = () => {
         md={6}
         sx={{ height: { xs: '50vh', md: 'calc(100vh - 64px)' } }}
       >
-        <MapSet
+        <Map
           pointEntities={[]}
           surfaceEntities={[]}
           fiware={{ servicePath: '', tenant: '' }}
+          iconType="pin"
           pinData={pinData}
         />
       </Grid>
@@ -134,7 +136,7 @@ const HappinessMe: React.FC = () => {
           <ResponsiveContainer width="100%" height={300}>
             <BarGraph
               plotdata={MyHappiness[period]}
-              color={COLORS}
+              color={graphColors}
               xTickFormatter={renderCustomDayTick}
             />
           </ResponsiveContainer>
@@ -206,7 +208,17 @@ const HappinessMe: React.FC = () => {
               </Button>
             </Grid>
           </Grid>
-          <Grid item xs={12} md={12} lg={8}>
+          <Grid
+            item
+            md={12}
+            lg={8}
+            sx={{
+              position: { xs: 'fixed', md: 'static' },
+              bottom: { xs: '10px', md: 'auto' },
+              left: { xs: '10px', md: 'auto' },
+              right: { xs: '10px', md: 'auto' },
+            }}
+          >
             <Button
               variant="contained"
               color="primary"
