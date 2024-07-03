@@ -7,6 +7,7 @@ export const PROFILE_TYPE = {
 
 export const ERROR_TYPE = {
   UNAUTHORIZED: 'Unauthorized',
+  REFRESH_ACCESS_TOKEN_ERROR: 'RefreshAccessTokenError',
 }
 
 export const HAPPINESS_KEYS: HappinessKey[] = [
