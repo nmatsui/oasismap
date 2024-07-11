@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HappinessMeService } from './happiness-me.service';
-import { mockHappinessMeEntities } from './mocks/orion/mock-happiness-orion.response';
-import { expectedHappinessMeResponse } from './expects/happiness/expected-happiness-me.response';
+import { HappinessListService } from './happiness-list.service';
+import { mockHappinessListEntities } from './mocks/orion/mock-happiness-orion.response';
+import { expectedHappinessListResponse } from './expects/happiness/expected-happiness-list.response';
 import axios from 'axios';
 import { UserAttribute } from 'src/auth/interface/user-attribute';
 
@@ -9,20 +9,21 @@ jest.mock('axios');
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
-describe('HappinessMeService', () => {
-  let happinessMeService: HappinessMeService;
+describe('HappinessListService', () => {
+  let happinessListService: HappinessListService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [HappinessMeService],
+      providers: [HappinessListService],
     }).compile();
 
-    happinessMeService = module.get<HappinessMeService>(HappinessMeService);
+    happinessListService =
+      module.get<HappinessListService>(HappinessListService);
   });
 
-  describe('findHappinessMe', () => {
+  describe('findHappinessList', () => {
     it('should return happiness entities', async () => {
-      const spy = mockedAxios.get.mockResolvedValue(mockHappinessMeEntities);
+      const spy = mockedAxios.get.mockResolvedValue(mockHappinessListEntities);
 
       const requestUserAttributes: UserAttribute = {
         nickname: 'nickname',
@@ -30,14 +31,10 @@ describe('HappinessMeService', () => {
         prefecture: '東京都',
         city: '文京区',
       };
-      const start = '2024-01-01T14:30:00+09:00';
-      const end = '2024-03-31T23:59:59+09:00';
       const limit = '100';
       const offset = '200';
-      const result = await happinessMeService.findHappinessMe(
+      const result = await happinessListService.findHappinessList(
         requestUserAttributes,
-        start,
-        end,
         limit,
         offset,
       );
@@ -48,13 +45,13 @@ describe('HappinessMeService', () => {
           'Fiware-ServicePath': process.env.ORION_FIWARE_SERVICE_PATH,
         },
         params: {
-          q: 'nickname==nickname;timestamp>=2024-01-01T05:30:00.000Z;timestamp<=2024-03-31T14:59:59.000Z',
+          q: 'nickname==nickname',
           limit: '100',
           offset: '200',
           orderBy: '!timestamp',
         },
       });
-      expect(result).toEqual(expectedHappinessMeResponse);
+      expect(result).toEqual(expectedHappinessListResponse);
     });
   });
 });
