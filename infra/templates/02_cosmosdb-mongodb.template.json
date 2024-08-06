@@ -1,0 +1,237 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "japaneast",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "prefix": {
+      "type": "string",
+      "defaultValue": "oasismap",
+      "metadata": {
+        "description": "Prefix of each resourece name"
+      }
+    },
+    "mongoAPIVersion": {
+      "type": "string",
+      "defaultValue": "6.0",
+      "metadata": {
+        "description": "MongoDB API Version"
+      }
+    },
+    "databaseName": {
+      "type": "string",
+      "defaultValue": "oriondb-government",
+      "metadata": {
+        "description": "Database name of MongoDB to be created automatically"
+      }
+    }
+  },
+  "variables": {
+    "dbAccountName": "[concat(parameters('prefix'), '-mongo-', uniqueString(resourceGroup().id))]",
+    "vnetName": "[concat(parameters('prefix'), '-VNET')]",
+    "subnetAppName": "[concat(parameters('prefix'), '-SN-App')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2024-05-15",
+      "name": "[variables('dbAccountName')]",
+      "location": "[parameters('location')]",
+      "kind": "MongoDB",
+      "properties": {
+        "publicNetworkAccess": "Enabled",
+        "enableAutomaticFailover": false,
+        "enableMultipleWriteLocations": false,
+        "isVirtualNetworkFilterEnabled": true,
+        "virtualNetworkRules": [
+          {
+            "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')), '/subnets/', variables('subnetAppName'))]",
+            "ignoreMissingVNetServiceEndpoint": false
+          }
+        ],
+        "disableKeyBasedMetadataWriteAccess": false,
+        "enableFreeTier": false,
+        "enableAnalyticalStorage": false,
+        "analyticalStorageConfiguration": {
+          "schemaType": "FullFidelity"
+        },
+        "createMode": "Default",
+        "databaseAccountOfferType": "Standard",
+        "defaultIdentity": "FirstPartyIdentity",
+        "networkAclBypass": "None",
+        "disableLocalAuth": false,
+        "enablePartitionMerge": false,
+        "enableBurstCapacity": false,
+        "minimalTlsVersion": "Tls12",
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session",
+          "maxIntervalInSeconds": 5,
+          "maxStalenessPrefix": 100
+        },
+        "apiProperties": {
+          "serverVersion": "[parameters('mongoAPIVersion')]"
+        },
+        "locations": [
+          {
+            "locationName": "[parameters('location')]",
+            "failoverPriority": 0,
+            "isZoneRedundant": false
+          }
+        ],
+        "capabilities": [
+          {
+            "name": "EnableMongo"
+          },
+          {
+            "name": "EnableServerless"
+          }
+        ],
+        "ipRules": [
+          {
+            "ipAddressOrRange": "104.42.195.92"
+          },
+          {
+            "ipAddressOrRange": "40.76.54.131"
+          },
+          {
+            "ipAddressOrRange": "52.176.6.30"
+          },
+          {
+            "ipAddressOrRange": "52.169.50.45"
+          },
+          {
+            "ipAddressOrRange": "52.187.184.26"
+          },
+          {
+            "ipAddressOrRange": "13.88.56.148"
+          },
+          {
+            "ipAddressOrRange": "40.91.218.243"
+          },
+          {
+            "ipAddressOrRange": "13.91.105.215"
+          },
+          {
+            "ipAddressOrRange": "4.210.172.107"
+          },
+          {
+            "ipAddressOrRange": "40.80.152.199"
+          },
+          {
+            "ipAddressOrRange": "13.95.130.121"
+          },
+          {
+            "ipAddressOrRange": "20.245.81.54"
+          },
+          {
+            "ipAddressOrRange": "40.118.23.126"
+          }
+        ],
+        "backupPolicy": {
+          "type": "Continuous",
+          "continuousModeProperties": {
+            "tier": "Continuous7Days"
+          }
+        },
+        "capacity": {
+          "totalThroughputLimit": 4000
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/mongodbDatabases",
+      "apiVersion": "2024-05-15",
+      "name": "[concat(variables('dbAccountName'), '/', parameters('databaseName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('dbAccountName'))]"
+      ],
+      "properties": {
+        "resource": {
+          "id": "[parameters('databaseName')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/mongodbDatabases/collections",
+      "apiVersion": "2024-05-15",
+      "name": "[concat(variables('dbAccountName'), '/', parameters('databaseName'), '/csubs')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/mongodbDatabases', variables('dbAccountName'), parameters('databaseName'))]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('dbAccountName'))]"
+      ],
+      "properties": {
+        "resource": {
+          "id": "csubs",
+          "indexes": [
+            {
+              "key": {
+                "keys": [
+                  "_id"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/mongodbDatabases/collections",
+      "apiVersion": "2024-05-15",
+      "name": "[concat(variables('dbAccountName'), '/', parameters('databaseName'), '/entities')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/mongodbDatabases', variables('dbAccountName'), parameters('databaseName'))]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('dbAccountName'))]"
+      ],
+      "properties": {
+        "resource": {
+          "id": "entities",
+          "indexes": [
+            {
+              "key": {
+                "keys": [
+                  "_id"
+                ]
+              }
+            },
+            {
+              "key": {
+                "keys": [
+                  "location.coords"
+                ]
+              }
+            },
+            {
+              "key": {
+                "keys": [
+                  "creDate"
+                ]
+              }
+            },
+            {
+              "key": {
+                "keys": [
+                  "attrs.timestamp.value"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "dbAccountName": {
+      "type": "string",
+      "value": "[variables('dbAccountName')]"
+    },
+    "databaseName": {
+      "type": "string",
+      "value": "[parameters('databaseName')]"
+    }
+  }
+}
