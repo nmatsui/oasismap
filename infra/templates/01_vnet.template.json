@@ -4,7 +4,7 @@
   "parameters": {
     "location": {
       "type": "string",
-      "defaultValue": "japaneast",
+      "defaultValue": "Japan East",
       "metadata": {
         "description": "Location for all resources."
       }
