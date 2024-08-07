@@ -98,10 +98,18 @@ services:
       - "POSTGRES_PASSWORD=${POSTGREPASSWORD}"
       - "POSTGRES_DB=postgres"
     volumes:
-      - ./scripts:/home/postgrescli/scripts
+      - type: bind
+        source: ./setup/init.sql
+        target: /opt/init.sql
+      - type: bind
+        source: ./scripts/add-column.sql
+        target: /opt/add-column.sql
+      - type: bind
+        source: ./infra/init/initdb.sh
+        target: /opt/initdb.sh
     networks:
       - backend-network
-    entrypoint: ["sh", "/home/postgrescli/scripts/initdb.sh"]
+    entrypoint: ["sh", "/opt/initdb.sh"]
 
   keycloak:
     image: quay.io/keycloak/keycloak:23.0.4
