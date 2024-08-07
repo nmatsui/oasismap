@@ -40,12 +40,6 @@ az deployment group create \
       maxCapacity=${AGW_MAX_CAPACITY} \
       wafMode="${WAF_MODE}"
 
-sed -i "" s/^KC_HOSTNAME_URL=.*/KC_HOSTNAME_URL=\"https:\\/\\/keycloak.${ROOT_DOMAIN_NAME}\"/g _env-azure.gen
-sed -i "" s/^KC_HOSTNAME_ADMIN_URL=.*/KC_HOSTNAME_ADMIN_URL=\"https:\\/\\/keycloak.${ROOT_DOMAIN_NAME}\"/g _env-azure.gen
-sed -i "" s/^KEYCLOAK_CLIENT_ISSUER=.*/KEYCLOAK_CLIENT_ISSUER=\"https:\\/\\/keycloak.${ROOT_DOMAIN_NAME}\\/realms\\/oasismap\"/g _env-azure.gen
-sed -i "" s/^NEXTAUTH_URL=.*/NEXTAUTH_URL=\"https:\\/\\/${ROOT_DOMAIN_NAME}\"/g _env-azure.gen
-sed -i "" s/^BACKEND_URL=.*/BACKEND_URL=\"https:\\/\\/backend.${ROOT_DOMAIN_NAME}\"/g _env-azure.gen
-
 public_ip=$(az network public-ip show \
   --resource-group "${RESOURCE_GROUP_NAME}" \
   --name "${PREFIX}-AGWIP" \
