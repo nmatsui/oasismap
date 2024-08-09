@@ -48,11 +48,17 @@
       "metadata": {
         "description": "OS Disk sku name"
       }
+    },
+    "customData": {
+      "type": "string",
+      "metadata": {
+        "description": "String passed down to the Virtual Machine for cloud-init"
+      }
     }
   },
   "variables": {
     "vmName": "[concat(parameters('prefix'), '-VM')]",
-    "publicIPName": "[concat(parameters('prefix'), '-PublicIP')]",
+    "publicIPName": "[concat(parameters('prefix'), '-VMIP')]",
     "NICName": "[concat(parameters('prefix'), '-NIC')]",
     "vnetName": "[concat(parameters('prefix'), '-VNET')]",
     "subnetAppName": "[concat(parameters('prefix'), '-SN-App')]",
@@ -137,6 +143,7 @@
         "osProfile": {
           "computerName": "[variables('vmName')]",
           "adminUsername": "[parameters('adminName')]",
+          "customData": "[base64(parameters('customData'))]",
           "linuxConfiguration": {
             "disablePasswordAuthentication": true,
             "ssh": {
@@ -177,7 +184,10 @@
             "enabled": true
           }
         }
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('NICName'))]"
+      ]
     }
   ],
   "outputs": {
