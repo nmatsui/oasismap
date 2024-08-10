@@ -1,0 +1,369 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "Japan East",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "prefix": {
+      "type": "string",
+      "defaultValue": "oasismap",
+      "metadata": {
+        "description": "Prefix of each resourece name"
+      }
+    },
+    "sku": {
+      "type": "string",
+      "defaultValue": "PerGB2018",
+      "allowedValues": [
+        "CapacityReservation",
+        "Free",
+        "LACluster",
+        "PerGB2018",
+        "PerNode",
+        "Premium",
+        "Standalone",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "Specify the pricing tier: PerGB2018 or legacy tiers (Free, Standalone, PerNode, Standard or Premium) which are not available to all customers."
+      }
+    },
+    "retentionInDays": {
+      "type": "int",
+      "defaultValue": 30,
+      "metadata": {
+        "description": "Specify the number of days to retain data."
+      }
+    },
+    "resourcePermissions": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Specify true to use resource or workspace permissions, or false to require workspace permissions."
+      }
+    },
+    "heartbeatTableRetention": {
+      "type": "int",
+      "defaultValue": 30,
+      "metadata": {
+        "description": "Specify the number of days to retain data in Heartbeat table."
+      }
+    }
+  },
+  "variables": {
+    "workspaceName": "[concat(parameters('prefix'), '-LOG')]",
+    "cosmosdbAccountName": "[concat(parameters('prefix'), '-mongo-', uniqueString(resourceGroup().id))]",
+    "postgresServerName": "[concat(parameters('prefix'), '-postgres-', uniqueString(resourceGroup().id))]",
+    "agwName": "[concat(parameters('prefix'), '-AGW')]",
+    "vmName": "[concat(parameters('prefix'), '-VM')]",
+    "dcrName": "[format('{0}-DCR', variables('vmName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('workspaceName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "[parameters('sku')]"
+        },
+        "retentionInDays": "[parameters('retentionInDays')]",
+        "features": {
+          "enableLogAccessUsingOnlyResourcePermissions": "[parameters('resourcePermissions')]"
+        },
+        "workspaceCapping": {
+          "dailyQuotaGb": -1
+        },
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/tables",
+      "apiVersion": "2021-12-01-preview",
+      "name": "[format('{0}/{1}', variables('workspaceName'), 'Heartbeat')]",
+      "properties": {
+        "retentionInDays": "[parameters('heartbeatTableRetention')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "scope": "[format('Microsoft.DocumentDB/databaseAccounts/{0}', variables('cosmosdbAccountName'))]",
+      "name": "[format('{0}-diagSettings', variables('cosmosdbAccountName'))]",
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]",
+        "logs": [
+          {
+            "category": "MongoRequests",
+            "categoryGroup": null,
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "scope": "[format('Microsoft.DBforPostgreSQL/flexibleServers/{0}', variables('postgresServerName'))]",
+      "name": "[format('{0}-diagSettings', variables('postgresServerName'))]",
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]",
+        "logs": [
+          {
+            "category": "PostgreSQLLogs",
+            "categoryGroup": null,
+            "enabled": true
+          },
+          {
+            "category": "PostgreSQLFlexSessions",
+            "categoryGroup": null,
+            "enabled": true
+          },
+          {
+            "category": "PostgreSQLFlexQueryStoreRuntime",
+            "categoryGroup": null,
+            "enabled": true
+          },
+          {
+            "category": "PostgreSQLFlexQueryStoreWaitStats",
+            "categoryGroup": null,
+            "enabled": true
+          },
+          {
+            "category": "PostgreSQLFlexTableStats",
+            "categoryGroup": null,
+            "enabled": true
+          },
+          {
+            "category": "PostgreSQLFlexDatabaseXacts",
+            "categoryGroup": null,
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "scope": "[format('Microsoft.Network/applicationGateways/{0}', variables('agwName'))]",
+      "name": "[format('{0}-diagSettings', variables('agwName'))]",
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]",
+        "logs": [
+          {
+            "category": "ApplicationGatewayAccessLog",
+            "categoryGroup": null,
+            "enabled": true
+          },
+          {
+            "category": "ApplicationGatewayPerformanceLog",
+            "categoryGroup": null,
+            "enabled": true
+          },
+          {
+            "category": "ApplicationGatewayFirewallLog",
+            "categoryGroup": null,
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/dataCollectionRules",
+      "apiVersion": "2023-03-11",
+      "name": "[variables('dcrName')]",
+      "location": "[parameters('location')]",
+      "kind": "Linux",
+      "properties": {
+        "dataSources": {
+          "performanceCounters": [
+            {
+              "name": "guestOSPerformances",
+              "streams": [
+                "Microsoft-InsightsMetrics"
+              ],
+              "samplingFrequencyInSeconds": 60,
+              "counterSpecifiers": [
+                "Processor(*)\\% Processor Time",
+                "Processor(*)\\% Idle Time",
+                "Processor(*)\\% User Time",
+                "Processor(*)\\% Nice Time",
+                "Processor(*)\\% Privileged Time",
+                "Processor(*)\\% IO Wait Time",
+                "Processor(*)\\% Interrupt Time",
+                "Processor(*)\\% DPC Time",
+                "Memory(*)\\Available MBytes Memory",
+                "Memory(*)\\% Available Memory",
+                "Memory(*)\\Used Memory MBytes",
+                "Memory(*)\\% Used Memory",
+                "Memory(*)\\Pages/sec",
+                "Memory(*)\\Page Reads/sec",
+                "Memory(*)\\Page Writes/sec",
+                "Memory(*)\\Available MBytes Swap",
+                "Memory(*)\\% Available Swap Space",
+                "Memory(*)\\Used MBytes Swap Space",
+                "Memory(*)\\% Used Swap Space",
+                "Process(*)\\Pct User Time",
+                "Process(*)\\Pct Privileged Time",
+                "Process(*)\\Used Memory",
+                "Process(*)\\Virtual Shared Memory",
+                "Logical Disk(*)\\% Free Inodes",
+                "Logical Disk(*)\\% Used Inodes",
+                "Logical Disk(*)\\Free Megabytes",
+                "Logical Disk(*)\\% Free Space",
+                "Logical Disk(*)\\% Used Space",
+                "Logical Disk(*)\\Logical Disk Bytes/sec",
+                "Logical Disk(*)\\Disk Read Bytes/sec",
+                "Logical Disk(*)\\Disk Write Bytes/sec",
+                "Logical Disk(*)\\Disk Transfers/sec",
+                "Logical Disk(*)\\Disk Reads/sec",
+                "Logical Disk(*)\\Disk Writes/sec",
+                "Network(*)\\Total Bytes Transmitted",
+                "Network(*)\\Total Bytes Received",
+                "Network(*)\\Total Bytes",
+                "Network(*)\\Total Packets Transmitted",
+                "Network(*)\\Total Packets Received",
+                "Network(*)\\Total Rx Errors",
+                "Network(*)\\Total Tx Errors",
+                "Network(*)\\Total Collisions",
+                "System(*)\\Uptime",
+                "System(*)\\Load1",
+                "System(*)\\Load5",
+                "System(*)\\Load15",
+                "System(*)\\Users",
+                "System(*)\\Unique Users",
+                "System(*)\\CPUs"
+              ]
+            }
+          ],
+          "syslog": [
+            {
+              "name": "guestOSSysLogs1",
+              "streams": [
+                "Microsoft-Syslog"
+              ],
+              "facilityNames": [
+                "alert",
+                "audit",
+                "auth",
+                "authpriv",
+                "cron",
+                "daemon",
+                "kern",
+                "local0",
+                "local1",
+                "local2",
+                "local3",
+                "local4",
+                "local5",
+                "local6",
+                "local7",
+                "syslog",
+                "user"
+              ],
+              "logLevels": [
+                "Info",
+                "Notice",
+                "Warning",
+                "Error",
+                "Critical",
+                "Alert",
+                "Emergency"
+              ]
+            },
+            {
+              "name": "guestOSSysLogs2",
+              "streams": [
+                "Microsoft-Syslog"
+              ],
+              "facilityNames": [
+                "clock",
+                "ftp",
+                "lpr",
+                "mail",
+                "news",
+                "nopri",
+                "ntp",
+                "uucp"
+              ],
+              "logLevels": [
+                "Warning",
+                "Error",
+                "Critical",
+                "Alert",
+                "Emergency"
+              ]
+            }
+          ]
+        },
+        "destinations": {
+          "logAnalytics": [
+            {
+              "name": "[variables('workspaceName')]",
+              "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+            }
+          ],
+          "azureMonitorMetrics": {
+            "name": "azureMonitorMetrics-default"
+          }
+        },
+        "dataFlows": [
+          {
+            "streams": [
+              "Microsoft-InsightsMetrics"
+            ],
+            "destinations": [
+              "azureMonitorMetrics-default"
+            ],
+            "transformKql": "source",
+            "outputStream": "Microsoft-InsightsMetrics"
+          },
+          {
+            "streams": [
+              "Microsoft-Syslog"
+            ],
+            "destinations": [
+              "[variables('workspaceName')]"
+            ],
+            "transformKql": "source",
+            "outputStream": "Microsoft-Syslog"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/dataCollectionRuleAssociations",
+      "apiVersion": "2023-03-11",
+      "scope": "[format('Microsoft.Compute/virtualMachines/{0}', variables('vmName'))]",
+      "name": "[format('{0}-Association', variables('dcrName'))]",
+      "properties": {
+        "dataCollectionRuleId": "[resourceId('Microsoft.Insights/dataCollectionRules', variables('dcrName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/dataCollectionRules', variables('dcrName'))]"
+      ]
+    }
+  ]
+}

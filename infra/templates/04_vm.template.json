@@ -122,6 +122,9 @@
       "apiVersion": "2024-03-01",
       "name": "[variables('vmName')]",
       "location": "[parameters('location')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
       "properties": {
         "hardwareProfile": {
           "vmSize": "[parameters('skuName')]"

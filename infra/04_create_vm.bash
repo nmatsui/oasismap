@@ -38,6 +38,27 @@ az deployment group create \
       osDiskSku="${VM_OSDISK_SKU}" \
       customData="${custom_data}"
 
+vm_system_managed_principalId=$(az resource list \
+  --resource-group "${RESOURCE_GROUP_NAME}" \
+  --name "${PREFIX}-VM" \
+  --query "[].identity.principalId" \
+  --output tsv)
+
+az deployment group create \
+  --resource-group "${RESOURCE_GROUP_NAME}" \
+  --template-file ./templates/04_vm_role_assignments.template.json \
+  --parameters \
+      location="${LOCATION}" \
+      prefix="${PREFIX}" \
+      principalId="${vm_system_managed_principalId}"
+
+az vm extension set \
+  --resource-group "${RESOURCE_GROUP_NAME}" \
+  --vm-name "${PREFIX}-VM" \
+  --name AzureMonitorLinuxAgent \
+  --publisher Microsoft.Azure.Monitor \
+  --enable-auto-upgrade true
+
 public_ip=$(az network public-ip show \
   --resource-group "${RESOURCE_GROUP_NAME}" \
   --name "${PREFIX}-VMIP" \
