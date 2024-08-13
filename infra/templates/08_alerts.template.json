@@ -1,0 +1,432 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "Japan East",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "prefix": {
+      "type": "string",
+      "defaultValue": "oasismap",
+      "metadata": {
+        "description": "Prefix of each resourece name"
+      }
+    },
+    "emailAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "Destination email Address for alert mails"
+      }
+    },
+    "actionGroupShortName": {
+      "type": "string",
+      "defaultValue": "Action Group",
+      "metadata": {
+        "description": "Short name up to 12 characters for the Action group."
+      }
+    }
+  },
+  "variables": {
+    "actionGroupName": "[concat(parameters('prefix'), '-ALERT-AG')]",
+    "cosmosdbAccountName": "[concat(parameters('prefix'), '-mongo-', uniqueString(resourceGroup().id))]",
+    "postgresServerName": "[concat(parameters('prefix'), '-postgres-', uniqueString(resourceGroup().id))]",
+    "agwName": "[concat(parameters('prefix'), '-AGW')]",
+    "vmName": "[concat(parameters('prefix'), '-VM')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Insights/actionGroups",
+      "apiVersion": "2021-09-01",
+      "name": "[variables('actionGroupName')]",
+      "location": "Global",
+      "properties": {
+        "groupShortName": "[parameters('actionGroupShortName')]",
+        "enabled": true,
+        "emailReceivers": [
+          {
+            "name": "destinationEmail",
+            "emailAddress": "[parameters('emailAddress')]",
+            "useCommonAlertSchema": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "microsoft.insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat(variables('cosmosdbAccountName'), '-ALERT-Availability')]",
+      "location": "global",
+      "properties": {
+        "severity": 1,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosdbAccountName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT1H",
+        "criteria": {
+          "allOf": [
+            {
+              "threshold": 100,
+              "name": "Metric1",
+              "metricNamespace": "Microsoft.DocumentDb/databaseAccounts",
+              "metricName": "ServiceAvailability",
+              "operator": "LessThan",
+              "timeAggregation": "Average",
+              "skipMetricValidation": false,
+              "criterionType": "StaticThresholdCriterion"
+            }
+          ],
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria"
+        },
+        "autoMitigate": true,
+        "targetResourceType": "Microsoft.DocumentDb/databaseAccounts",
+        "targetResourceRegion": "[parameters('location')]",
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    },
+    {
+      "type": "microsoft.insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat(variables('postgresServerName'), '-ALERT-CPU')]",
+      "location": "global",
+      "properties": {
+        "severity": 2,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "allOf": [
+            {
+              "threshold": 70,
+              "name": "Metric1",
+              "metricNamespace": "Microsoft.DBforPostgreSQL/flexibleServers",
+              "metricName": "cpu_percent",
+              "operator": "GreaterThan",
+              "timeAggregation": "Average",
+              "skipMetricValidation": false,
+              "criterionType": "StaticThresholdCriterion"
+            }
+          ],
+          "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria"
+        },
+        "autoMitigate": true,
+        "targetResourceType": "Microsoft.DBforPostgreSQL/flexibleServers",
+        "targetResourceRegion": "[parameters('location')]",
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    },
+    {
+      "type": "microsoft.insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat(variables('postgresServerName'), '-ALERT-MEM')]",
+      "location": "global",
+      "properties": {
+        "severity": 2,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "allOf": [
+            {
+              "threshold": 70,
+              "name": "Metric1",
+              "metricNamespace": "Microsoft.DBforPostgreSQL/flexibleServers",
+              "metricName": "memory_percent",
+              "operator": "GreaterThan",
+              "timeAggregation": "Average",
+              "skipMetricValidation": false,
+              "criterionType": "StaticThresholdCriterion"
+            }
+          ],
+          "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria"
+        },
+        "autoMitigate": true,
+        "targetResourceType": "Microsoft.DBforPostgreSQL/flexibleServers",
+        "targetResourceRegion": "[parameters('location')]",
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    },
+    {
+      "type": "microsoft.insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat(variables('postgresServerName'), '-ALERT-DISK')]",
+      "location": "global",
+      "properties": {
+        "severity": 2,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "allOf": [
+            {
+              "threshold": 70,
+              "name": "Metric1",
+              "metricNamespace": "Microsoft.DBforPostgreSQL/flexibleServers",
+              "metricName": "storage_percent",
+              "operator": "GreaterThan",
+              "timeAggregation": "Average",
+              "skipMetricValidation": false,
+              "criterionType": "StaticThresholdCriterion"
+            }
+          ],
+          "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria"
+        },
+        "autoMitigate": true,
+        "targetResourceType": "Microsoft.DBforPostgreSQL/flexibleServers",
+        "targetResourceRegion": "[parameters('location')]",
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    },
+    {
+      "type": "microsoft.insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat(variables('vmName'), '-ALERT-CPU')]",
+      "location": "global",
+      "properties": {
+        "severity": 2,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "allOf": [
+            {
+              "threshold": 70,
+              "name": "Metric1",
+              "metricNamespace": "Azure.VM.Linux.GuestMetrics",
+              "metricName": "cpu/usage_active",
+              "operator": "GreaterThan",
+              "timeAggregation": "Average",
+              "skipMetricValidation": false,
+              "criterionType": "StaticThresholdCriterion"
+            }
+          ],
+          "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria"
+        },
+        "autoMitigate": true,
+        "targetResourceType": "Microsoft.Compute/virtualMachines",
+        "targetResourceRegion": "[parameters('location')]",
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    },
+    {
+      "type": "microsoft.insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat(variables('vmName'), '-ALERT-MEM')]",
+      "location": "global",
+      "properties": {
+        "severity": 2,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "allOf": [
+            {
+              "threshold": 70,
+              "name": "Metric1",
+              "metricNamespace": "Azure.VM.Linux.GuestMetrics",
+              "metricName": "mem/used_percent",
+              "operator": "GreaterThan",
+              "timeAggregation": "Average",
+              "skipMetricValidation": false,
+              "criterionType": "StaticThresholdCriterion"
+            }
+          ],
+          "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria"
+        },
+        "autoMitigate": true,
+        "targetResourceType": "Microsoft.Compute/virtualMachines",
+        "targetResourceRegion": "[parameters('location')]",
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    },
+    {
+      "type": "microsoft.insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat(variables('vmName'), '-ALERT-DISK')]",
+      "location": "global",
+      "properties": {
+        "severity": 2,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "allOf": [
+            {
+              "threshold": 70,
+              "name": "Metric1",
+              "metricNamespace": "Azure.VM.Linux.GuestMetrics",
+              "metricName": "disk/used_percent",
+              "operator": "GreaterThan",
+              "timeAggregation": "Average",
+              "skipMetricValidation": false,
+              "criterionType": "StaticThresholdCriterion"
+            }
+          ],
+          "odata.type": "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria"
+        },
+        "autoMitigate": true,
+        "targetResourceType": "Microsoft.Compute/virtualMachines",
+        "targetResourceRegion": "[parameters('location')]",
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    },
+    {
+      "type": "microsoft.insights/metricAlerts",
+      "apiVersion": "2018-03-01",
+      "name": "[concat(variables('agwName'), '-ALERT-UnHealthyHosts')]",
+      "location": "global",
+      "properties": {
+        "severity": 1,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Network/applicationGateways', variables('agwName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "allOf": [
+            {
+              "threshold": 0,
+              "name": "Metric1",
+              "metricNamespace": "Microsoft.Network/applicationGateways",
+              "metricName": "UnhealthyHostCount",
+              "operator": "GreaterThan",
+              "timeAggregation": "Average",
+              "skipMetricValidation": false,
+              "criterionType": "StaticThresholdCriterion"
+            }
+          ],
+          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria"
+        },
+        "autoMitigate": true,
+        "targetResourceType": "Microsoft.Network/applicationGateways",
+        "targetResourceRegion": "[parameters('location')]",
+        "actions": [
+          {
+            "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    },
+    {
+      "type": "microsoft.insights/scheduledqueryrules",
+      "apiVersion": "2023-03-15-preview",
+      "name": "[concat(variables('vmName'), '-ALERT-Syslog-local0')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "displayName": "[concat(variables('vmName'), '-ALERT-Syslog-local0')]",
+        "severity": 1,
+        "enabled": true,
+        "scopes": [
+          "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+        ],
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "targetResourceTypes": [
+          "Microsoft.Compute/virtualMachines"
+        ],
+        "criteria": {
+          "allOf": [
+            {
+              "query": "Syslog\n| where Facility == \"local0\"\n| where SyslogMessage has \"error\" or SyslogMessage has \"exception\"\n",
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "autoMitigate": false,
+        "actions": {
+          "actionGroups": [
+            "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+          ],
+          "customProperties": {},
+          "actionProperties": {}
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+      ]
+    }
+  ]
+}
