@@ -5,7 +5,7 @@ source .env
 # You have to install 'lego' before executing this script. https://go-acme.github.io/lego/
 lego \
   --domains "${ROOT_DOMAIN_NAME}" --domains "keycloak.${ROOT_DOMAIN_NAME}" --domains "backend.${ROOT_DOMAIN_NAME}" \
-  --email "${EMAIL}" \
+  --email "${LEGO_EMAIL}" \
   --dns "azuredns" \
   --accept-tos \
   --path "$(pwd)/cert/lego" \
