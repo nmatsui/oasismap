@@ -36,6 +36,11 @@ services:
       retries: 10
       start_period: 10s
     restart: always
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: backend
 
   frontend:
     build:
@@ -79,13 +84,18 @@ services:
       - "KEYCLOAK_CLIENT_ISSUER=${KEYCLOAK_CLIENT_ISSUER}"
     networks:
       - frontend-network
-    restart: always
     healthcheck:
       test: "curl -f http://frontend:3000"
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 10s
+    restart: always
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: frontend
 
   postgres-cli:
     image: postgres:16.1
@@ -110,6 +120,11 @@ services:
     networks:
       - backend-network
     entrypoint: ["sh", "/opt/initdb.sh"]
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: postgres-cli
 
   keycloak:
     image: quay.io/keycloak/keycloak:23.0.4
@@ -140,6 +155,11 @@ services:
       retries: 10
       start_period: 10s
     restart: always
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: keycloak
 
   orion:
     image: fiware/orion:3.11.0
@@ -157,6 +177,11 @@ services:
       retries: 10
       start_period: 10s
     restart: always
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: orion
 
   cygnus:
     image: fiware/cygnus-ngsi:3.5.0
@@ -184,6 +209,11 @@ services:
       retries: 10
       start_period: 10s
     restart: always
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: cygnus
 
 networks:
   backend-network:
