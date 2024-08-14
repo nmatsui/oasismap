@@ -181,7 +181,9 @@
             "categoryGroup": null,
             "enabled": true
           }
-        ]
+        ],
+        "logAnalyticsDestinationType": "Dedicated"
+
       },
       "dependsOn": [
         "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
