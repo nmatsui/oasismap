@@ -2,7 +2,8 @@
 
 ## 構成図
 
-> TBD
+![azure-diagram](/doc/img/azure-diagram.png)
+
 
 ## 環境構築手順
 
