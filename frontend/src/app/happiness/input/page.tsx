@@ -10,6 +10,7 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  TextField,
 } from '@mui/material'
 
 import { messageContext } from '@/contexts/message-context'
@@ -17,14 +18,7 @@ import { MessageType } from '@/types/message-type'
 import { ERROR_TYPE } from '@/libs/constants'
 import { postData } from '@/libs/fetch'
 import { getCurrentPosition } from '@/libs/geolocation'
-
-type HappinessKey =
-  | 'happiness1'
-  | 'happiness2'
-  | 'happiness3'
-  | 'happiness4'
-  | 'happiness5'
-  | 'happiness6'
+import { HappinessKey } from '@/types/happiness-key'
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
 
@@ -45,6 +39,7 @@ const HappinessInput: React.FC = () => {
     happiness5: 0,
     happiness6: 0,
   })
+  const [memo, setMemo] = useState('')
 
   // チェックボックスの状態が全て0かどうかをチェック
   const isAllUnchecked = !Object.values(checkboxValues).some(Boolean)
@@ -75,6 +70,7 @@ const HappinessInput: React.FC = () => {
         {
           latitude: position.latitude!,
           longitude: position.longitude!,
+          memo: memo,
           answers: checkboxValues,
         },
         updatedSession?.user?.accessToken!
@@ -129,6 +125,25 @@ const HappinessInput: React.FC = () => {
             </ListItem>
           ))}
         </List>
+        <TextField
+          id="memo"
+          label="メモ"
+          placeholder="場所名など、その場所の特徴を入力してください"
+          size="small"
+          margin="normal"
+          fullWidth
+          sx={{
+            '& .MuiInputBase-input': { color: 'text.primary' },
+            '& label': { color: 'text.primary' },
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': { borderColor: 'text.primary' },
+            },
+          }}
+          InputLabelProps={{ shrink: true }}
+          onChange={(e) => setMemo(e.target.value)}
+          error={memo.length > 30}
+          helperText={memo.length > 30 ? '30文字以内で入力してください' : ''}
+        />
       </Grid>
       <Grid item xs={12} md={8}>
         <Button
@@ -137,7 +152,7 @@ const HappinessInput: React.FC = () => {
           size="large"
           fullWidth
           onClick={() => submitForm()}
-          disabled={isAllUnchecked}
+          disabled={isAllUnchecked || memo.length > 30}
         >
           幸福度を送信
         </Button>

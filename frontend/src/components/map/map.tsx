@@ -180,7 +180,7 @@ const Map: React.FC<Props> = ({ iconType, pinData }) => {
         attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         maxZoom={18}
-        minZoom={10}
+        minZoom={5}
       />
       <LayersControl position="topright">
         {Object.keys(questionTitles).map((type) => (

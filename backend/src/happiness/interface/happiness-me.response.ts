@@ -1,4 +1,9 @@
 export interface HappinessMeResponse {
+  count: number;
+  data: Data[];
+}
+
+export interface Data {
   id: string;
   type: string;
   location: {
@@ -9,6 +14,7 @@ export interface HappinessMeResponse {
     };
   };
   timestamp: string;
+  memo: string;
   answers: {
     happiness1: number;
     happiness2: number;

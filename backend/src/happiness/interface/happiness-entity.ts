@@ -1,6 +1,9 @@
-export interface HappinessEntity {
+export interface OrionEntity {
   id: string;
   type: string;
+}
+
+export interface HappinessEntity extends OrionEntity {
   happiness1: {
     type: string;
     value: number;
@@ -51,6 +54,10 @@ export interface HappinessEntity {
     value: string;
   };
   address: {
+    type: string;
+    value: string;
+  };
+  memo: {
     type: string;
     value: string;
   };

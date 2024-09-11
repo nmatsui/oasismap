@@ -3,6 +3,7 @@ import KeycloakProvider from 'next-auth/providers/keycloak'
 import { JWT } from 'next-auth/jwt'
 import jwt, { JwtHeader, JwtPayload, SigningKeyCallback } from 'jsonwebtoken'
 import jwksClient, { SigningKey } from 'jwks-rsa'
+import { ERROR_TYPE } from '@/libs/constants'
 
 const handler = NextAuth({
   providers: [
@@ -70,6 +71,9 @@ const handler = NextAuth({
       if (token.userType) {
         session.user.type = token.userType as string
       }
+      if (token.error) {
+        session.error = token.error as string
+      }
 
       return session
     },
@@ -127,11 +131,30 @@ const refreshAccessToken = async (token: JWT): Promise<JWT> => {
       refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
     }
   } catch (error) {
-    console.log(error)
+    if (typeof error === 'object' && error !== null) {
+      if ('error' in error && 'error_description' in error) {
+        const keycloakError = error as {
+          error: string
+          error_description: string
+        }
+        if (
+          !(
+            keycloakError.error === 'invalid_grant' &&
+            keycloakError.error_description === 'Token is not active'
+          )
+        ) {
+          console.log(keycloakError)
+        }
+      } else {
+        console.log(error)
+      }
+    } else {
+      console.log(error)
+    }
 
     return {
       ...token,
-      error: 'RefreshAccessTokenError',
+      error: ERROR_TYPE.REFRESH_ACCESS_TOKEN_ERROR,
     }
   }
 }

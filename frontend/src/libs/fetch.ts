@@ -1,6 +1,8 @@
 import { ERROR_TYPE } from './constants'
 
 interface HappinessParams {
+  limit: number
+  offset: number
   start: string
   end: string
   period?: string
@@ -10,6 +12,7 @@ interface HappinessParams {
 interface HappinessRequestBody {
   latitude: number
   longitude: number
+  memo: string
   answers: {
     happiness1: number
     happiness2: number
@@ -18,6 +21,11 @@ interface HappinessRequestBody {
     happiness5: number
     happiness6: number
   }
+}
+
+interface HappinessListParams {
+  limit: number
+  offset: number
 }
 
 export const fetchData = async (
@@ -29,9 +37,46 @@ export const fetchData = async (
     const query = new URLSearchParams({
       start: params.start,
       end: params.end,
+      limit: params.limit.toString(),
+      offset: params.offset.toString(),
       ...(params.period && { period: params.period }),
       ...(params.zoomLevel && { zoomLevel: params.zoomLevel.toString() }),
     })
+
+    const response = await fetch(`${url}?${query}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    const jsonData = await response.json()
+
+    if (response.status === 401) {
+      throw Error(ERROR_TYPE.UNAUTHORIZED)
+    }
+    if (response.status >= 400) {
+      throw Error(jsonData?.message)
+    }
+
+    return jsonData
+  } catch (error) {
+    console.error('Error:', error)
+    throw error
+  }
+}
+
+export const fetchListData = async (
+  url: string,
+  params: HappinessListParams,
+  token: string
+): Promise<any> => {
+  try {
+    const query = new URLSearchParams({
+      limit: params.limit.toString(),
+      offset: params.offset.toString(),
+    })
+
     const response = await fetch(`${url}?${query}`, {
       method: 'GET',
       headers: {
@@ -85,6 +130,35 @@ export const postData = async (
   }
 }
 
+export const upload = async (
+  url: string,
+  requestBody: FormData,
+  token: string
+): Promise<any> => {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: requestBody,
+    })
+
+    if (response.status === 401) {
+      throw Error(ERROR_TYPE.UNAUTHORIZED)
+    }
+    if (response.status >= 400) {
+      const jsonData = await response.json()
+      throw Error(jsonData?.message)
+    }
+
+    return response
+  } catch (error) {
+    console.error('Error:', error)
+    throw error
+  }
+}
+
 export const download = async (url: string, token: string) => {
   try {
     const response = await fetch(`${url}`, {
@@ -129,5 +203,27 @@ const getFileName = (response: Response) => {
     if (matches) {
       return matches[2]
     }
+  }
+}
+
+export const deleteData = async (url: string, token: string): Promise<any> => {
+  try {
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    if (response.status === 401) {
+      throw Error(ERROR_TYPE.UNAUTHORIZED)
+    }
+    if (response.status >= 400) {
+      const jsonData = await response.json()
+      throw Error(jsonData?.message)
+    }
+  } catch (error) {
+    console.error('Error:', error)
+    throw error
   }
 }

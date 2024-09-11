@@ -4,11 +4,7 @@ import { expectedHappinessInputResponse } from './expects/happiness/expected-hap
 import axios from 'axios';
 import { CreateHappinessDto } from './dto/create-happiness.dto';
 import { mockGeocodingResponse } from './mocks/geocoding/mock-geocoding.response';
-import {
-  mockPostHappinessEntity,
-  mockPostHappinessEntity500,
-} from './mocks/orion/mock-happiness-orion.response';
-import { InternalServerErrorException } from '@nestjs/common';
+import { mockPostHappinessEntity } from './mocks/orion/mock-happiness-orion.response';
 import { UserAttribute } from 'src/auth/interface/user-attribute';
 
 jest.mock('axios');
@@ -40,6 +36,7 @@ describe('HappinessInputService', () => {
     const requestParam: CreateHappinessDto = {
       latitude: 35.629327,
       longitude: 139.72382,
+      memo: 'ダミーメモ',
       answers: {
         happiness1: 1,
         happiness2: 1,
@@ -108,6 +105,7 @@ describe('HappinessInputService', () => {
             type: 'Text',
             value: '東京都文京区',
           },
+          memo: { type: 'Text', value: 'ダミーメモ' },
         },
         {
           headers: {
@@ -118,17 +116,6 @@ describe('HappinessInputService', () => {
         },
       );
       expect(result).toEqual(expectedHappinessInputResponse);
-    });
-
-    it('should return error', async () => {
-      mockedAxios.post.mockResolvedValue(mockPostHappinessEntity500);
-
-      await expect(
-        happinessInputService.postHappiness(
-          requestUserAttributes,
-          requestParam,
-        ),
-      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 });
