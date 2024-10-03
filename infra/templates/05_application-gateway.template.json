@@ -1,0 +1,362 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "Japan East",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "prefix": {
+      "type": "string",
+      "defaultValue": "oasismap",
+      "metadata": {
+        "description": "Prefix of each resourece name"
+      }
+    },
+    "certData": {
+      "type": "string",
+      "metadata": {
+        "description": "Base-64 encoded form of the .pfx file"
+      }
+    },
+    "certPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for .pfx certificate"
+      }
+    },
+    "rootDomain": {
+      "type": "string",
+      "metadata": {
+        "description": "Root domain name"
+      }
+    },    
+    "backendIpAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "IP Address for Backend Server"
+      }
+    },
+    "agwSku": {
+      "type": "string",
+      "defaultValue": "WAF_v2",
+      "allowedValues": [
+        "WAF_v2"
+      ],
+      "metadata": {
+        "description": "Specifies the application gateway SKU name."
+      }
+    },
+    "minCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "allowedValues": [
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+      ],
+      "metadata": {
+        "description": "Min Number of instances"
+      }
+    },
+    "maxCapacity": {
+      "type": "int",
+      "defaultValue": 2,
+      "allowedValues": [
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+      ],
+      "metadata": {
+        "description": "Max Number of instances"
+      }
+    },
+    "wafEnabled": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "WAF Enabled"
+      }
+    },
+    "wafMode": {
+      "type": "string",
+      "allowedValues": [
+        "Detection",
+        "Prevention"
+      ],
+      "defaultValue": "Prevention",
+      "metadata": {
+        "description": "WAF Mode"
+      }
+    },
+    "wafRuleSetType": {
+      "type": "string",
+      "allowedValues": [
+        "OWASP"
+      ],
+      "defaultValue": "OWASP",
+      "metadata": {
+        "description": "WAF Rule Set Type"
+      }
+    },
+    "wafRuleSetVersion": {
+      "type": "string",
+      "allowedValues": [
+        "3.2"
+      ],
+      "defaultValue": "3.2",
+      "metadata": {
+        "description": "WAF Rule Set Version"
+      }
+    }
+  },
+  "variables": {
+    "agwName": "[concat(parameters('prefix'), '-AGW')]",
+    "publicIPName": "[concat(parameters('prefix'), '-AGWIP')]",
+    "rootCertName": "[concat(parameters('prefix'), '-rootCert')]",
+    "vnetName": "[concat(parameters('prefix'), '-VNET')]",
+    "subnetDMZName": "[concat(parameters('prefix'), '-SN-DMZ')]",
+    "NICName": "[concat(parameters('prefix'), '-NIC')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('publicIPName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard",
+        "tier": "Regional"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "publicIPAddressVersion": "IPv4",
+        "idleTimeoutInMinutes": 4
+      }
+    },
+    {
+      "type": "Microsoft.Network/applicationGateways",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('agwName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "[parameters('agwSku')]",
+          "tier": "WAF_v2"
+        },
+        "enableHttp2": true,
+        "autoscaleConfiguration": {
+          "minCapacity": 0,
+          "maxCapacity": 2
+        },
+        "gatewayIPConfigurations": [
+          {
+            "name": "agwIpConfig",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnetDMZName'))]"
+              }
+            }
+          }
+        ],
+        "sslCertificates": [
+          {
+            "name": "agwSslCert",
+            "properties": {
+              "data": "[parameters('certData')]",
+              "password": "[parameters('certPassword')]"
+            }
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "agwFrontendIP",
+            "properties": {
+              "PublicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPName'))]"
+              }
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "agwFrontendPort",
+            "properties": {
+              "Port": 443
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "agwBackendPool",
+            "properties": {
+              "BackendAddresses": [
+                {
+                  "IpAddress": "[parameters('backendIpAddress')]"
+                }
+              ]
+            }
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "agwBackendHttpSettings-keycloak",
+            "properties": {
+              "Port": 8080,
+              "Protocol": "Http",
+              "CookieBasedAffinity": "Enabled",
+              "pickHostNameFromBackendAddress": false,
+              "affinityCookieName": "AGWAffinityKeycloak",
+              "requestTimeout": 20
+            }
+          },
+          {
+            "name": "agwBackendHttpSettings-backend",
+            "properties": {
+              "Port": 4000,
+              "Protocol": "Http",
+              "CookieBasedAffinity": "Enabled",
+              "pickHostNameFromBackendAddress": false,
+              "affinityCookieName": "AGWAffinityBackend",
+              "requestTimeout": 20
+            }
+          },
+          {
+            "name": "agwBackendHttpSettings-frontend",
+            "properties": {
+              "Port": 3000,
+              "Protocol": "Http",
+              "CookieBasedAffinity": "Enabled",
+              "pickHostNameFromBackendAddress": false,
+              "affinityCookieName": "AGWAffinityFrontend",
+              "requestTimeout": 20
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "agwHttpListener-keycloak",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations',variables('agwName'), 'agwFrontendIP')]"
+              },
+              "FrontendPort": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',variables('agwName'), 'agwFrontendPort')]"
+              },
+              "Protocol": "Https",
+              "SslCertificate": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/sslCertificates',variables('agwName'), 'agwSslCert')]"
+              },
+              "hostName": "[format('keycloak.{0}', parameters('rootDomain'))]",
+              "hostNames": [],
+              "requireServerNameIndication": true,
+              "customErrorConfigurations": []
+            }
+          },
+          {
+            "name": "agwHttpListener-backend",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations',variables('agwName'), 'agwFrontendIP')]"
+              },
+              "FrontendPort": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',variables('agwName'), 'agwFrontendPort')]"
+              },
+              "Protocol": "Https",
+              "SslCertificate": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/sslCertificates',variables('agwName'), 'agwSslCert')]"
+              },
+              "hostName": "[format('backend.{0}', parameters('rootDomain'))]",
+              "hostNames": [],
+              "requireServerNameIndication": true,
+              "customErrorConfigurations": []
+            }
+          },
+          {
+            "name": "agwHttpListener-frontend",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations',variables('agwName'), 'agwFrontendIP')]"
+              },
+              "FrontendPort": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',variables('agwName'), 'agwFrontendPort')]"
+              },
+              "Protocol": "Https",
+              "SslCertificate": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/sslCertificates',variables('agwName'), 'agwSslCert')]"
+              },
+              "hostName": "[format('{0}', parameters('rootDomain'))]",
+              "hostNames": [],
+              "requireServerNameIndication": true,
+              "customErrorConfigurations": []
+            }
+          }
+        ],
+        "requestRoutingRules": [
+          {
+            "Name": "rule-keycloak",
+            "properties": {
+              "RuleType": "Basic",
+              "priority": 1,
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners',variables('agwName'), 'agwHttpListener-keycloak')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools',variables('agwName'), 'agwBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection',variables('agwName'), 'agwBackendHttpSettings-keycloak')]"
+              }
+            }
+          },
+          {
+            "Name": "rule-backend",
+            "properties": {
+              "RuleType": "Basic",
+              "priority": 2,
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners',variables('agwName'), 'agwHttpListener-backend')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools',variables('agwName'), 'agwBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection',variables('agwName'), 'agwBackendHttpSettings-backend')]"
+              }
+            }
+          },
+          {
+            "Name": "rule-frontend",
+            "properties": {
+              "RuleType": "Basic",
+              "priority": 3,
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners',variables('agwName'), 'agwHttpListener-frontend')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools',variables('agwName'), 'agwBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection',variables('agwName'), 'agwBackendHttpSettings-frontend')]"
+              }
+            }
+          }
+        ],
+        "webApplicationFirewallConfiguration": {
+          "enabled": "[parameters('wafEnabled')]",
+          "firewallMode": "[parameters('wafMode')]",
+          "ruleSetType": "[parameters('wafRuleSetType')]",
+          "ruleSetVersion": "[parameters('wafRuleSetVersion')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "publicIp": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName')), '2023-11-01').ipAddress]"
+    }
+  }
+}

@@ -1,0 +1,278 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "Japan East",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "prefix": {
+      "type": "string",
+      "defaultValue": "oasismap",
+      "metadata": {
+        "description": "Prefix of each resourece name"
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16",
+      "metadata": {
+        "description": "VNET Address prefix"
+      }
+    },
+    "subnetDMZPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/24",
+      "metadata": {
+        "description": "DMZ Subnet Prefix"
+      }
+    },
+    "subnetAppPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.1.0/24",
+      "metadata": {
+        "description": "App Subnet Prefix"
+      }
+    },
+    "subnetDBPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.2.0/24",
+      "metadata": {
+        "description": "DB Subnet Prefix"
+      }
+    }
+  },
+  "variables": {
+    "vnetName": "[concat(parameters('prefix'), '-VNET')]",
+    "subnetDMZName": "[concat(parameters('prefix'), '-SN-DMZ')]",
+    "subnetAppName": "[concat(parameters('prefix'), '-SN-App')]",
+    "subnetDBName": "[concat(parameters('prefix'), '-SN-DB')]",
+    "nsgDMZName": "[concat(parameters('prefix'), '-NSG-DMZ')]",
+    "nsgAppName": "[concat(parameters('prefix'), '-NSG-App')]",
+    "nsgDBName": "[concat(parameters('prefix'), '-NSG-DB')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('nsgDMZName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowInternetHTTPSInbound",
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "properties": {
+              "protocol": "TCP",
+              "sourcePortRange": "*",
+              "destinationPortRange": "443",
+              "sourceAddressPrefix": "Internet",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowGateWayManagerAnyInbound",
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "65200-65535",
+              "sourceAddressPrefix": "GatewayManager",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 210,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('nsgAppName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowPrivateHTTPInbound",
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "properties": {
+              "protocol": "TCP",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "[parameters('subnetDMZPrefix')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "AllowAnySSHInbound",
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "properties": {
+              "protocol": "TCP",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 210,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('nsgDBName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AllowPrivatePostgresInbound",
+            "type": "Microsoft.Network/networkSecurityGroups/securityRules",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "5432",
+              "sourceAddressPrefix": "[parameters('subnetAppPrefix')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[variables('nsgDMZName')]",
+        "[variables('nsgAppName')]",
+        "[variables('nsgDMZName')]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('vnetAddressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetDMZName')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnetDMZPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgDMZName'))]"
+              },
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Disabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "[variables('subnetAppName')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnetAppPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgAppName'))]"
+              },
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.AzureCosmosDB",
+                  "locations": ["[parameters('location')]"]
+                }
+              ],
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Disabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "[variables('subnetDBName')]",
+            "properties": {
+              "addressPrefix": "[parameters('subnetDBPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgDBName'))]"
+              },
+              "serviceEndpoints": [
+                {
+                  "service": "Microsoft.Storage",
+                  "locations": ["[parameters('location')]"]
+                } 
+              ],
+              "delegations": [
+                {
+                  "name": "dlg-Microsoft.DBforPostgreSQL-flexibleServers",
+                  "properties": {
+                    "serviceName": "Microsoft.DBforPostgreSQL/flexibleServers"
+                  },
+                  "type": "Microsoft.Network/virtualNetworks/subnets/delegations"
+                }
+              ],
+              "privateEndpointNetworkPolicies": "Disabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "vnetName": {
+      "type": "string",
+      "value": "[variables('vnetName')]"
+    },
+    "subnetDMZName": {
+      "type": "string",
+      "value": "[variables('subnetDMZName')]"
+    },
+    "subnetDMZAddressPrefix": {
+      "type": "string",
+      "value": "[parameters('subnetDMZPrefix')]"
+    },
+    "nsgDMZName": {
+      "type": "string",
+      "value": "[variables('nsgDMZName')]"
+    },
+    "subnetAppName": {
+      "type": "string",
+      "value": "[variables('subnetAppName')]"
+    },
+    "subnetAppAddressPrefix": {
+      "type": "string",
+      "value": "[parameters('subnetAppPrefix')]"
+    },
+    "nsgAppName": {
+      "type": "string",
+      "value": "[variables('nsgAppName')]"
+    },
+    "subnetDBName": {
+      "type": "string",
+      "value": "[variables('subnetDBName')]"
+    },
+    "subnetDBAddressPrefix": {
+      "type": "string",
+      "value": "[parameters('subnetDBPrefix')]"
+    },
+    "nsgDBName": {
+      "type": "string",
+      "value": "[variables('nsgDBName')]"
+    }
+  }
+}

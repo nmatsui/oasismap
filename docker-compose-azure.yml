@@ -1,0 +1,223 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    hostname: backend
+    container_name: backend
+    depends_on:
+      orion:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    working_dir: /app/backend
+    ports:
+      - "4000:4000"
+    environment:
+      - "API_PORT=4000"
+      - "ORION_URI=http://orion:1026"
+      - "ORION_FIWARE_SERVICE=Government"
+      - "ORION_FIWARE_SERVICE_PATH=/Happiness"
+      - "ADMIN_KEYCLOAK_CLIENT_ID=${ADMIN_KEYCLOAK_CLIENT_ID}"
+      - "KEYCLOAK_CLIENT_ISSUER=${KEYCLOAK_CLIENT_ISSUER}"
+      - "FRONTEND_URL=${NEXTAUTH_URL}"
+      - "POSTGRES_HOST=${POSTGREHOST}"
+      - "POSTGRES_PORT=${POSTGREPORT}"
+      - "POSTGRES_USER=${POSTGREUSER}"
+      - "POSTGRES_PASSWORD=${POSTGREPASSWORD}"
+      - "POSTGRES_DATABASE=cygnus"
+      - "REVERSE_GEOCODING_URL=${REVERSE_GEOCODING_URL}"
+    networks:
+      - backend-network
+    healthcheck:
+      test: "curl -f http://backend:4000"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: always
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXTAUTH_URL: "${NEXTAUTH_URL}"
+        NEXTAUTH_SECRET: "${NEXTAUTH_SECRET}"
+        NEXT_PUBLIC_MAP_DEFAULT_LATITUDE: "${MAP_DEFAULT_LATITUDE}"
+        NEXT_PUBLIC_MAP_DEFAULT_LONGITUDE: "${MAP_DEFAULT_LONGITUDE}"
+        NEXT_PUBLIC_MAP_DEFAULT_ZOOM: "${MAP_DEFAULT_ZOOM}"
+        NEXT_PUBLIC_DEFAULT_ZOOM_FOR_COLLECTION_RANGE: "${DEFAULT_ZOOM_FOR_COLLECTION_RANGE}"
+        NEXT_PUBLIC_DATASET_LIST_BY: "${DATASET_LIST_BY}"
+        NEXT_PUBLIC_BACKEND_URL: "${BACKEND_URL}"
+        GENERAL_USER_KEYCLOAK_CLIENT_ID: "${GENERAL_USER_KEYCLOAK_CLIENT_ID}"
+        GENERAL_USER_KEYCLOAK_CLIENT_SECRET: "${GENERAL_USER_KEYCLOAK_CLIENT_SECRET}"
+        ADMIN_KEYCLOAK_CLIENT_ID: "${ADMIN_KEYCLOAK_CLIENT_ID}"
+        ADMIN_KEYCLOAK_CLIENT_SECRET: "${ADMIN_KEYCLOAK_CLIENT_SECRET}"
+        KEYCLOAK_CLIENT_ISSUER: "${KEYCLOAK_CLIENT_ISSUER}"
+    hostname: frontend
+    container_name: frontend
+    working_dir: /app/frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      - "NEXTAUTH_URL=${NEXTAUTH_URL}"
+      - "NEXTAUTH_SECRET=${NEXTAUTH_SECRET}"
+      - "NEXT_PUBLIC_MAP_DEFAULT_LATITUDE=${MAP_DEFAULT_LATITUDE}"
+      - "NEXT_PUBLIC_MAP_DEFAULT_LONGITUDE=${MAP_DEFAULT_LONGITUDE}"
+      - "NEXT_PUBLIC_MAP_DEFAULT_ZOOM=${MAP_DEFAULT_ZOOM}"
+      - "NEXT_PUBLIC_DEFAULT_ZOOM_FOR_COLLECTION_RANGE=${DEFAULT_ZOOM_FOR_COLLECTION_RANGE}"
+      - "NEXT_PUBLIC_DATASET_LIST_BY=${DATASET_LIST_BY}"
+      - "NEXT_PUBLIC_BACKEND_URL=${BACKEND_URL}"
+      - "GENERAL_USER_KEYCLOAK_CLIENT_ID=${GENERAL_USER_KEYCLOAK_CLIENT_ID}"
+      - "GENERAL_USER_KEYCLOAK_CLIENT_SECRET=${GENERAL_USER_KEYCLOAK_CLIENT_SECRET}"
+      - "ADMIN_KEYCLOAK_CLIENT_ID=${ADMIN_KEYCLOAK_CLIENT_ID}"
+      - "ADMIN_KEYCLOAK_CLIENT_SECRET=${ADMIN_KEYCLOAK_CLIENT_SECRET}"
+      - "KEYCLOAK_CLIENT_ISSUER=${KEYCLOAK_CLIENT_ISSUER}"
+    networks:
+      - frontend-network
+    healthcheck:
+      test: "curl -f http://frontend:3000"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: always
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: frontend
+
+  postgres-cli:
+    image: postgres:16.1
+    hostname: postgres-cli
+    container_name: postgres-cli
+    environment:
+      - "POSTGRES_HOST=${POSTGREHOST}"
+      - "POSTGRES_PORT=${POSTGREPORT}"
+      - "POSTGRES_USER=${POSTGREUSER}"
+      - "POSTGRES_PASSWORD=${POSTGREPASSWORD}"
+      - "POSTGRES_DB=postgres"
+    volumes:
+      - type: bind
+        source: ./setup/init.sql
+        target: /opt/init.sql
+      - type: bind
+        source: ./scripts/add-column.sql
+        target: /opt/add-column.sql
+      - type: bind
+        source: ./infra/init/initdb.sh
+        target: /opt/initdb.sh
+    networks:
+      - backend-network
+    entrypoint: ["sh", "/opt/initdb.sh"]
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: postgres-cli
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0.4
+    hostname: keycloak
+    container_name: keycloak
+    ports:
+      - "8080:8080"
+    environment:
+      - "KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}" 
+      - "KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}"
+      - "KC_DB=postgres"
+      - "KC_DB_URL=jdbc:postgresql://${POSTGREHOST}:${POSTGREPORT}/postgres"
+      - "KC_DB_USERNAME=${POSTGREUSER}"
+      - "KC_DB_PASSWORD=${POSTGREPASSWORD}"
+      - "KC_HOSTNAME_URL=${KC_HOSTNAME_URL}"
+      - "KC_HOSTNAME_ADMIN_URL=${KC_HOSTNAME_ADMIN_URL}"
+      - "TZ=Asia/Tokyo"
+    command: start-dev --features=declarative-user-profile
+    volumes:
+      - ./keycloak/themes:/opt/keycloak/themes
+      - ./keycloak/providers:/opt/keycloak/providers
+    networks:
+      - backend-network
+    healthcheck:
+      test: "echo > /dev/tcp/localhost/8080"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: always
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: keycloak
+
+  orion:
+    image: fiware/orion:3.11.0
+    hostname: orion
+    container_name: orion
+    expose:
+      - "1026"
+    command: "-dbhost \"${MONGOHOST}\" -dbuser \"${MONGOUSERNAME}\" -dbpwd \"${MONGOPASSWORD}\" -port 1026 -db oriondb -dbAuthDb admin -logLevel INFO -dbSSL -dbDisableRetryWrites"
+    networks:
+      - backend-network
+    healthcheck:
+      test: "curl -f http://orion:1026/version"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: always
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: orion
+
+  cygnus:
+    image: fiware/cygnus-ngsi:3.5.0
+    hostname: cygnus
+    container_name: cygnus
+    environment:
+      - "CYGNUS_POSTGRESQL_HOST=${POSTGREHOST}"
+      - "CYGNUS_POSTGRESQL_PORT=${POSTGREPORT}"
+      - "CYGNUS_POSTGRESQL_USER=${POSTGREUSER}"
+      - "CYGNUS_POSTGRESQL_PASS=${POSTGREPASSWORD}"
+      - "CYGNUS_POSTGRESQL_ENABLE_CACHE=true"
+      - "CYGNUS_POSTGRESQL_SERVICE_PORT=5055"
+      - "CYGNUS_POSTGRESQL_DATABASE=cygnus"
+      - "CYGNUS_POSTGRESQL_DATA_MODEL=dm-by-service-path"
+      - "CYGNUS_POSTGRESQL_ATTR_PERSISTENCE=column"
+      - "CYGNUS_LOG_LEVEL=INFO"
+      - "CYGNUS_SERVICE_PORT=5055"
+      - "CYGNUS_API_PORT=5080"
+    networks:
+      - backend-network
+    healthcheck:
+      test: "curl -f http://cygnus:5080/v1/version"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: always
+    logging:
+      driver: syslog
+      options:
+        syslog-facility: local0
+        tag: cygnus
+
+networks:
+  backend-network:
+    driver: bridge
+  frontend-network:
+    driver: bridge
+

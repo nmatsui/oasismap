@@ -1,0 +1,14 @@
+[Unit]
+Description=oasismap
+
+[Service]
+Type=simple
+Environment=COMPOSE_FILE=/home/azureuser/oasismap/docker-compose-azure.yml
+Restart=always
+
+ExecStart=/usr/bin/docker compose -f ${COMPOSE_FILE}  up
+ExecStop=/usr/bin/docker compose -f ${COMPOSE_FILE} down
+ExecReload=/usr/bin/docker compose -f ${COMPOSE_FILE} restart
+
+[Install]
+WantedBy=multi-user.target
