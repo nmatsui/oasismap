@@ -13,12 +13,9 @@ interface HeaderProps {
 
 const Nickname = () => {
   const { data: session } = useSession()
-  const titles = {
-    [PROFILE_TYPE.GENERAL]: ' さん',
-    [PROFILE_TYPE.ADMIN]: '',
-  }
-  const title = titles[session?.user?.type!]
-  return session ? `${session.user!.nickname}${title}` : ''
+  return session && session?.user?.type! == PROFILE_TYPE.ADMIN
+    ? session.user!.nickname
+    : ''
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -29,7 +26,7 @@ const Header: React.FC<HeaderProps> = ({
     <AppBar sx={{ color: '#FFF', backgroundColor: '#459586' }}>
       <Toolbar>
         <Typography variant="h6" noWrap sx={{ flexGrow: 1 }} component="div">
-          OASISmap
+          Well-Being可視化アプリ
         </Typography>
         {!simple && (
           <>
