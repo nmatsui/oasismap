@@ -12,11 +12,11 @@
 
     |ツール|概要|動作確認済みバージョン（OS）|
     |:--|:--|:--|
-    |az|Azure Commandline Interface(CLI)|2.62.0(macOS 13.6.9)|
-    |openssl|公開鍵暗号や署名等に関する機能をもつツール|3.3.1 4(macOS 13.6.9)|
-    |lego|Let's Encrypt/ACMEクライアントツール|4.17.4(macOS 13.6.9)|
-    |bash|macOSデフォルト|3.2.57(1)(macOS 13.6.9)|
-    |sed|macOSデフォルトのBSD sed||
+    |az|Azure Commandline Interface(CLI)|2.62.0(macOS 13.6.9) or 2.65.0(Ubuntu 22.04.5 LTS)|
+    |openssl|公開鍵暗号や署名等に関する機能をもつツール|3.3.1 4(macOS 13.6.9) or 3.3.2(Ubuntu 22.04.5 LTS)|
+    |lego|Let's Encrypt/ACMEクライアントツール|4.17.4(macOS 13.6.9) or 4.19.2(Ubuntu 22.04.5 LTS)|
+    |bash|bash(macOS or Ubuntu)|3.2.57(1)(macOS 13.6.9) or  5.1.16(1)(Ubuntu 22.04.5 LTS)|
+    |sed|sed(BSD or GNU)|BSD sed(macOS 13.6.9) or GNU sed 4.8(Ubuntu 22.04.5 LTS)|
 
 1. （作業用PC）oasismapリポジトリをcloneする
 
