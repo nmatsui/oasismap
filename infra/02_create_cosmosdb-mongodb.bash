@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source .env
+source 99_common.bash
 
 az deployment group create \
   --resource-group "${RESOURCE_GROUP_NAME}" \
@@ -29,8 +30,8 @@ else
   echo "ERROR: can't get username, password, host"
 fi
 
-sed -i "" s/^MONGOHOST=.*/MONGOHOST=\""${host}"\"/g _env-azure.gen
-sed -i "" s/^MONGOUSERNAME=.*/MONGOUSERNAME=\""${username}"\"/g _env-azure.gen
-sed -i "" s/^MONGOPASSWORD=.*/MONGOPASSWORD=\""${password}"\"/g _env-azure.gen
+sedi s/^MONGOHOST=.*/MONGOHOST=\""${host}"\"/g _env-azure.gen
+sedi s/^MONGOUSERNAME=.*/MONGOUSERNAME=\""${username}"\"/g _env-azure.gen
+sedi s/^MONGOPASSWORD=.*/MONGOPASSWORD=\""${password}"\"/g _env-azure.gen
 
 echo "Replace the connection parameters to MongoDB in '_env-azure.gen'"
