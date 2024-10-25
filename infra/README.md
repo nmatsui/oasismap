@@ -219,6 +219,7 @@
     ```
 
     * `GoogleClientID` `GoogleClientSecret` へGoogle Cloud認証システムから得たクライアントID、シークレットを転記
+    * `ClientBaseURL` を `https://<設定したルートドメイン>` に変更
 
 1. （Azure VM）keycloakディレクトリに移動する
 
@@ -272,22 +273,16 @@
 1. keycloakの`realm` から `oasismap` を選択する
 2. 左のメニューバーから `Clients` をクリック
 3. `general-user-client` をクリック
-4. `Valid redirect URIs`の **http://localhost:3000** を `https://<設定したルートドメイン>` に変更する
-5. `Web origins`の **http://localhost:3000** を `https://<設定したルートドメイン>` に変更する
-6. `Save` をクリックする
-7. `Credentials` をクリックする
-8. `Client Secret` の値をAzure VM上のoasismapの環境変数 `GENERAL_USER_KEYCLOAK_CLIENT_SECRET` に転記する
+4. `Credentials` をクリックする
+5. `Client Secret` の値をAzure VM上のoasismapの環境変数 `GENERAL_USER_KEYCLOAK_CLIENT_SECRET` に転記する
 
 #### 自治体管理者向けクライアントシークレットの設定
 
 1. keycloakの`realm` に `oasismap` を選択する
 2. 左のメニューバーから `Clients` をクリックする
 3. `admin-client` をクリックする
-4. `Valid redirect URIs`の **http://localhost:3000** を `https://<設定したルートドメイン>` に変更する
-5. `Web origins`の **http://localhost:3000** を `https://<設定したルートドメイン>` に変更する
-6. `Save` をクリックする
-5. `Credentials` をクリックする
-7. `Client Secret` の値を環境変数 `ADMIN_KEYCLOAK_CLIENT_SECRET` に転記する
+4. `Credentials` をクリックする
+5. `Client Secret` の値を環境変数 `ADMIN_KEYCLOAK_CLIENT_SECRET` に転記する
 
 ### oasismap serviceを再起動して環境変数を反映
 1. （Azure VM）oasismap serviceを再起動する
