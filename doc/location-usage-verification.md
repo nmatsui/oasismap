@@ -151,3 +151,10 @@ Cygnusが生成する履歴データを追加するinsert文はカラム名に�
 
 - Cygnusのログ上はアッパーケースだが実際はロアケースとなり違和感がある
 - PostgreSQLに登録する履歴用テーブルに使うカラム名はロアケースにする必要がある
+
+## コンテナ起動時にCygnusスキーマが生成されない場合がある
+
+コンテナ起動時に存在チェック機構が存在しないため、Cygnusスキーマが存在しない場合がある
+
+### 対応方法
+- [init.sql](https://github.com/c-3lab/oasismap/blob/main/setup/init.sql)を手動実行する
