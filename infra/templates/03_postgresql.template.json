@@ -1,0 +1,187 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "Japan East",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "prefix": {
+      "type": "string",
+      "defaultValue": "oasismap",
+      "metadata": {
+        "description": "Prefix of each resourece name"
+      }
+    },
+    "adminName": {
+      "type": "string",
+      "defaultValue": "postgres",
+      "minLength": 1,
+      "metadata": {
+        "description": "Database administrator login name"
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "minLength": 8,
+      "metadata": {
+        "description": "Database administrator password"
+      }
+    },
+    "skuName": {
+      "type": "string",
+      "defaultValue": "Standard_D2ds_v4",
+      "metadata": {
+        "description": "Azure database for PostgreSQL sku name "
+      }
+    },
+    "skuTier": {
+      "type": "string",
+      "defaultValue": "GeneralPurpose",
+      "allowedValues": [
+        "GeneralPurpose",
+        "MemoryOptimized",
+        "Burstable"
+      ],
+      "metadata": {
+        "description": "Azure database for PostgreSQL pricing tier"
+      }
+    },
+    "storageSizeGB": {
+      "type": "int",
+      "defaultValue": 32,
+      "allowedValues": [
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "metadata": {
+        "description": "Azure database for PostgreSQL storage Size "
+      }
+    },
+    "postgresqlVersion": {
+      "type": "string",
+      "defaultValue": "16",
+      "allowedValues": [
+        "14",
+        "15",
+        "16"
+      ],
+      "metadata": {
+        "description": "PostgreSQL version"
+      }
+    },
+    "backupRetentionDays": {
+      "type": "int",
+      "defaultValue": 7,
+      "metadata": {
+        "description": "PostgreSQL Server backup retention days"
+      }
+    },
+    "geoRedundantBackup": {
+      "type": "string",
+      "defaultValue": "Disabled",
+      "metadata": {
+        "description": "Geo-Redundant Backup setting"
+      }
+    }
+  },
+  "variables": {
+    "serverName": "[concat(parameters('prefix'), '-postgres-', uniqueString(resourceGroup().id))]",
+    "privateDnsZoneName": "[concat(variables('serverName'), '.private.postgres.database.azure.com')]",
+    "vnetName": "[concat(parameters('prefix'), '-VNET')]",
+    "subnetDBName": "[concat(parameters('prefix'), '-SN-DB')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('privateDnsZoneName')]",
+      "location": "global",
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+      "apiVersion": "2020-06-01",
+      "name": "[concat(variables('privateDnsZoneName'), '/', variables('vnetName'))]",
+      "location": "global",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneName'))]"
+      ],
+      "properties": {
+        "registrationEnabled": false,
+        "virtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+      "apiVersion": "2023-12-01-preview",
+      "name": "[variables('serverName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('skuName')]",
+        "tier": "[parameters('skuTier')]"
+      },
+      "properties": {
+        "administratorLogin": "[parameters('adminName')]",
+        "administratorLoginPassword": "[parameters('adminPassword')]",
+        "storage": {
+          "storageSizeGB": "[parameters('StorageSizeGB')]"
+        },
+        "version": "[parameters('postgresqlVersion')]",
+        "backup": {
+          "backupRetentionDays": "[parameters('backupRetentionDays')]",
+          "geoRedundantBackup": "[parameters('geoRedundantBackup')]"
+        },
+        "highAvailability": {
+          "mode": "Disabled"
+        },
+        "network": {
+          "publicNetworkAccess": "Disabled",
+          "delegatedSubnetResourceId": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('vnetName')), '/subnets/', variables('subnetDBName'))]",
+          "privateDnsZoneArmResourceId": "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneName'))]"
+        },
+        "replica": {
+          "role": "Primary"
+        },
+        "dataEncryption": {
+          "type": "SystemManaged"
+        },
+        "authConfig": {
+          "activeDirectoryAuth": "Disabled",
+          "passwordAuth": "Enabled"
+        },
+        "replicationRole": "Primary"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneName'))]",
+        "[resourceId('Microsoft.Network/privateDnsZones/virtualNetworkLinks', variables('privateDnsZoneName'), variables('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+      "apiVersion": "2023-12-01-preview",
+      "name": "[concat(variables('serverName'), '/require_secure_transport')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('serverName'))]"
+      ],
+      "properties": {
+        "value": "OFF",
+        "source": "user-override"
+      }
+    }
+  ],
+  "outputs": {
+    "serverName": {
+      "type": "string",
+      "value": "[variables('serverName')]"
+    }
+  }
+}

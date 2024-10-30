@@ -1,0 +1,1043 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "Japan East",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "prefix": {
+      "type": "string",
+      "defaultValue": "oasismap",
+      "metadata": {
+        "description": "Prefix of each resourece name"
+      }
+    },
+    "certData": {
+      "type": "string",
+      "metadata": {
+        "description": "Base-64 encoded form of the .pfx file"
+      }
+    },
+    "certPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for .pfx certificate"
+      }
+    },
+    "rootDomain": {
+      "type": "string",
+      "metadata": {
+        "description": "Root domain name"
+      }
+    },    
+    "backendIpAddress": {
+      "type": "string",
+      "metadata": {
+        "description": "IP Address for Backend Server"
+      }
+    },
+    "agwSku": {
+      "type": "string",
+      "defaultValue": "WAF_v2",
+      "allowedValues": [
+        "WAF_v2"
+      ],
+      "metadata": {
+        "description": "Specifies the application gateway SKU name."
+      }
+    },
+    "minCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "allowedValues": [
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+      ],
+      "metadata": {
+        "description": "Min Number of instances"
+      }
+    },
+    "maxCapacity": {
+      "type": "int",
+      "defaultValue": 2,
+      "allowedValues": [
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+      ],
+      "metadata": {
+        "description": "Max Number of instances"
+      }
+    },
+    "wafEnabled": {
+      "type": "string",
+      "allowedValues": [
+        "Enabled",
+        "Disabled"
+      ],
+      "defaultValue": "Enabled",
+      "metadata": {
+        "description": "WAF Enabled"
+      }
+    },
+    "wafMode": {
+      "type": "string",
+      "allowedValues": [
+        "Detection",
+        "Prevention"
+      ],
+      "defaultValue": "Prevention",
+      "metadata": {
+        "description": "WAF Mode"
+      }
+    }
+  },
+  "variables": {
+    "agwName": "[concat(parameters('prefix'), '-AGW')]",
+    "publicIPName": "[concat(parameters('prefix'), '-AGWIP')]",
+    "rootCertName": "[concat(parameters('prefix'), '-rootCert')]",
+    "vnetName": "[concat(parameters('prefix'), '-VNET')]",
+    "subnetDMZName": "[concat(parameters('prefix'), '-SN-DMZ')]",
+    "NICName": "[concat(parameters('prefix'), '-NIC')]",
+    "WAFPolicyDefault": "[concat(parameters('prefix'), '-WAFPolicy-default')]",
+    "WAFPolicyKeycloak": "[concat(parameters('prefix'), '-WAFPolicy-keycloak')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('publicIPName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard",
+        "tier": "Regional"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static",
+        "publicIPAddressVersion": "IPv4",
+        "idleTimeoutInMinutes": 4
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies",
+      "apiVersion": "2024-01-01",
+      "name": "[variables('WAFPolicyKeycloak')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "customRules": [],
+        "policySettings": {
+          "requestBodyCheck": true,
+          "maxRequestBodySizeInKb": 128,
+          "fileUploadLimitInMb": 100,
+          "state": "Disabled",
+          "mode": "Detection",
+          "jsChallengeCookieExpirationInMins": 30,
+          "requestBodyInspectLimitInKB": 128,
+          "fileUploadEnforcement": true,
+          "requestBodyEnforcement": true
+        },
+        "managedRules": {
+          "managedRuleSets": [
+            {
+              "ruleSetType": "OWASP",
+              "ruleSetVersion": "3.2",
+              "ruleGroupOverrides": []
+            },
+            {
+              "ruleSetType": "Microsoft_BotManagerRuleSet",
+              "ruleSetVersion": "1.0",
+              "ruleGroupOverrides": []
+            }
+          ],
+          "exclusions": []
+        }
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies",
+      "apiVersion": "2024-01-01",
+      "name": "[variables('WAFPolicyDefault')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "customRules": [
+          {
+            "name": "AuthGeneral",
+            "priority": 10,
+            "ruleType": "MatchRule",
+            "action": "Allow",
+            "matchConditions": [
+              {
+                "matchVariables": [
+                  {
+                    "variableName": "RequestUri"
+                  }
+                ],
+                "operator": "BeginsWith",
+                "negationConditon": false,
+                "matchValues": [
+                  "/api/auth/callback/general-user-keycloak-client"
+                ],
+                "transforms": [
+                  "Lowercase"
+                ]
+              },
+              {
+                "matchVariables": [
+                  {
+                    "variableName": "QueryString"
+                  }
+                ],
+                "operator": "Contains",
+                "negationConditon": false,
+                "matchValues": [
+                  "[format('iss=https://keycloak.{0}/realms/oasismap', parameters('rootDomain'))]"
+                ],
+                "transforms": [
+                  "UrlDecode",
+                  "Lowercase"
+                ]
+              }
+            ],
+            "state": "Enabled"
+          },
+          {
+            "name": "AuthAdmin",
+            "priority": 11,
+            "ruleType": "MatchRule",
+            "action": "Allow",
+            "matchConditions": [
+              {
+                "matchVariables": [
+                  {
+                    "variableName": "RequestUri"
+                  }
+                ],
+                "operator": "BeginsWith",
+                "negationConditon": false,
+                "matchValues": [
+                  "/api/auth/callback/admin-keycloak-client"
+                ],
+                "transforms": [
+                  "Lowercase"
+                ]
+              },
+              {
+                "matchVariables": [
+                  {
+                    "variableName": "QueryString"
+                  }
+                ],
+                "operator": "Contains",
+                "negationConditon": false,
+                "matchValues": [
+                  "[format('iss=https://keycloak.{0}/realms/oasismap', parameters('rootDomain'))]"
+                ],
+                "transforms": [
+                  "UrlDecode",
+                  "Lowercase"
+                ]
+              }
+            ],
+            "state": "Enabled"
+          }
+        ],
+        "policySettings": {
+          "requestBodyCheck": true,
+          "maxRequestBodySizeInKb": 128,
+          "fileUploadLimitInMb": 100,
+          "state": "[parameters('wafEnabled')]",
+          "mode": "[parameters('wafMode')]",
+          "jsChallengeCookieExpirationInMins": 30,
+          "requestBodyInspectLimitInKB": 128,
+          "fileUploadEnforcement": true,
+          "requestBodyEnforcement": true
+        },
+        "managedRules": {
+          "managedRuleSets": [
+            {
+              "ruleSetType": "OWASP",
+              "ruleSetVersion": "3.2",
+              "ruleGroupOverrides": []
+            },
+            {
+              "ruleSetType": "Microsoft_BotManagerRuleSet",
+              "ruleSetVersion": "1.0",
+              "ruleGroupOverrides": []
+            }
+          ],
+          "exclusions": [
+            {
+              "matchVariable": "RequestCookieKeys",
+              "selectorMatchOperator": "Contains",
+              "selector": "__Secure-next-auth.session-token",
+              "exclusionManagedRuleSets": [
+                {
+                  "ruleSetType": "OWASP",
+                  "ruleSetVersion": "3.2",
+                  "ruleGroups": [
+                    {
+                      "ruleGroupName": "REQUEST-942-APPLICATION-ATTACK-SQLI",
+                      "rules": [
+                        { "ruleId": "942440" },
+                        { "ruleId": "942450" },
+                        { "ruleId": "942100" },
+                        { "ruleId": "942110" },
+                        { "ruleId": "942120" },
+                        { "ruleId": "942130" },
+                        { "ruleId": "942140" },
+                        { "ruleId": "942150" },
+                        { "ruleId": "942160" },
+                        { "ruleId": "942170" },
+                        { "ruleId": "942180" },
+                        { "ruleId": "942190" },
+                        { "ruleId": "942200" },
+                        { "ruleId": "942210" },
+                        { "ruleId": "942220" },
+                        { "ruleId": "942230" },
+                        { "ruleId": "942240" },
+                        { "ruleId": "942250" },
+                        { "ruleId": "942251" },
+                        { "ruleId": "942260" },
+                        { "ruleId": "942270" },
+                        { "ruleId": "942280" },
+                        { "ruleId": "942290" },
+                        { "ruleId": "942300" },
+                        { "ruleId": "942310" },
+                        { "ruleId": "942320" },
+                        { "ruleId": "942330" },
+                        { "ruleId": "942340" },
+                        { "ruleId": "942350" },
+                        { "ruleId": "942360" },
+                        { "ruleId": "942361" },
+                        { "ruleId": "942370" },
+                        { "ruleId": "942380" },
+                        { "ruleId": "942390" },
+                        { "ruleId": "942400" },
+                        { "ruleId": "942410" },
+                        { "ruleId": "942420" },
+                        { "ruleId": "942421" },
+                        { "ruleId": "942430" },
+                        { "ruleId": "942431" },
+                        { "ruleId": "942432" },
+                        { "ruleId": "942460" },
+                        { "ruleId": "942470" },
+                        { "ruleId": "942480" },
+                        { "ruleId": "942490" },
+                        { "ruleId": "942500" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "General",
+                      "rules": [
+                        { "ruleId": "200002" },
+                        { "ruleId": "200003" },
+                        { "ruleId": "200004" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "Known-CVEs",
+                      "rules": [
+                        { "ruleId": "800100" },
+                        { "ruleId": "800110" },
+                        { "ruleId": "800111" },
+                        { "ruleId": "800112" },
+                        { "ruleId": "800113" },
+                        { "ruleId": "800114" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-911-METHOD-ENFORCEMENT",
+                      "rules": [
+                        { "ruleId": "911100" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-913-SCANNER-DETECTION",
+                      "rules": [
+                        { "ruleId": "913100" },
+                        { "ruleId": "913101" },
+                        { "ruleId": "913102" },
+                        { "ruleId": "913110" },
+                        { "ruleId": "913120" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-920-PROTOCOL-ENFORCEMENT",
+                      "rules": [
+                        { "ruleId": "920100" },
+                        { "ruleId": "920120" },
+                        { "ruleId": "920121" },
+                        { "ruleId": "920160" },
+                        { "ruleId": "920170" },
+                        { "ruleId": "920171" },
+                        { "ruleId": "920180" },
+                        { "ruleId": "920190" },
+                        { "ruleId": "920200" },
+                        { "ruleId": "920201" },
+                        { "ruleId": "920202" },
+                        { "ruleId": "920210" },
+                        { "ruleId": "920220" },
+                        { "ruleId": "920230" },
+                        { "ruleId": "920240" },
+                        { "ruleId": "920250" },
+                        { "ruleId": "920260" },
+                        { "ruleId": "920270" },
+                        { "ruleId": "920271" },
+                        { "ruleId": "920272" },
+                        { "ruleId": "920273" },
+                        { "ruleId": "920274" },
+                        { "ruleId": "920280" },
+                        { "ruleId": "920290" },
+                        { "ruleId": "920300" },
+                        { "ruleId": "920310" },
+                        { "ruleId": "920311" },
+                        { "ruleId": "920320" },
+                        { "ruleId": "920330" },
+                        { "ruleId": "920340" },
+                        { "ruleId": "920341" },
+                        { "ruleId": "920350" },
+                        { "ruleId": "920420" },
+                        { "ruleId": "920430" },
+                        { "ruleId": "920440" },
+                        { "ruleId": "920450" },
+                        { "ruleId": "920460" },
+                        { "ruleId": "920470" },
+                        { "ruleId": "920480" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-921-PROTOCOL-ATTACK",
+                      "rules": [
+                        { "ruleId": "921110" },
+                        { "ruleId": "921120" },
+                        { "ruleId": "921130" },
+                        { "ruleId": "921140" },
+                        { "ruleId": "921150" },
+                        { "ruleId": "921151" },
+                        { "ruleId": "921160" },
+                        { "ruleId": "921170" },
+                        { "ruleId": "921180" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-930-APPLICATION-ATTACK-LFI",
+                      "rules": [
+                        { "ruleId": "930100" },
+                        { "ruleId": "930110" },
+                        { "ruleId": "930120" },
+                        { "ruleId": "930130" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-931-APPLICATION-ATTACK-RFI",
+                      "rules": [
+                        { "ruleId": "931100" },
+                        { "ruleId": "931110" },
+                        { "ruleId": "931120" },
+                        { "ruleId": "931130" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-932-APPLICATION-ATTACK-RCE",
+                      "rules": [
+                        { "ruleId": "932100" },
+                        { "ruleId": "932105" },
+                        { "ruleId": "932106" },
+                        { "ruleId": "932110" },
+                        { "ruleId": "932115" },
+                        { "ruleId": "932120" },
+                        { "ruleId": "932130" },
+                        { "ruleId": "932140" },
+                        { "ruleId": "932150" },
+                        { "ruleId": "932160" },
+                        { "ruleId": "932170" },
+                        { "ruleId": "932171" },
+                        { "ruleId": "932180" },
+                        { "ruleId": "932190" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-933-APPLICATION-ATTACK-PHP",
+                      "rules": [
+                        { "ruleId": "933100" },
+                        { "ruleId": "933110" },
+                        { "ruleId": "933111" },
+                        { "ruleId": "933120" },
+                        { "ruleId": "933130" },
+                        { "ruleId": "933131" },
+                        { "ruleId": "933140" },
+                        { "ruleId": "933150" },
+                        { "ruleId": "933151" },
+                        { "ruleId": "933160" },
+                        { "ruleId": "933161" },
+                        { "ruleId": "933170" },
+                        { "ruleId": "933180" },
+                        { "ruleId": "933190" },
+                        { "ruleId": "933200" },
+                        { "ruleId": "933210" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-941-APPLICATION-ATTACK-XSS",
+                      "rules": [
+                        { "ruleId": "941100" },
+                        { "ruleId": "941101" },
+                        { "ruleId": "941110" },
+                        { "ruleId": "941120" },
+                        { "ruleId": "941130" },
+                        { "ruleId": "941140" },
+                        { "ruleId": "941150" },
+                        { "ruleId": "941160" },
+                        { "ruleId": "941170" },
+                        { "ruleId": "941180" },
+                        { "ruleId": "941190" },
+                        { "ruleId": "941200" },
+                        { "ruleId": "941210" },
+                        { "ruleId": "941220" },
+                        { "ruleId": "941230" },
+                        { "ruleId": "941240" },
+                        { "ruleId": "941250" },
+                        { "ruleId": "941260" },
+                        { "ruleId": "941270" },
+                        { "ruleId": "941280" },
+                        { "ruleId": "941290" },
+                        { "ruleId": "941300" },
+                        { "ruleId": "941310" },
+                        { "ruleId": "941320" },
+                        { "ruleId": "941330" },
+                        { "ruleId": "941340" },
+                        { "ruleId": "941350" },
+                        { "ruleId": "941360" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION",
+                      "rules": [
+                        { "ruleId": "943100" },
+                        { "ruleId": "943110" },
+                        { "ruleId": "943120" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-944-APPLICATION-ATTACK-JAVA",
+                      "rules": [
+                        { "ruleId": "944100" },
+                        { "ruleId": "944110" },
+                        { "ruleId": "944120" },
+                        { "ruleId": "944130" },
+                        { "ruleId": "944200" },
+                        { "ruleId": "944210" },
+                        { "ruleId": "944240" },
+                        { "ruleId": "944250" }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "matchVariable": "RequestCookieNames",
+              "selectorMatchOperator": "Contains",
+              "selector": "__Secure-next-auth.session-token",
+              "exclusionManagedRuleSets": [
+                {
+                  "ruleSetType": "OWASP",
+                  "ruleSetVersion": "3.2",
+                  "ruleGroups": [
+                    {
+                      "ruleGroupName": "REQUEST-942-APPLICATION-ATTACK-SQLI",
+                      "rules": [
+                        { "ruleId": "942440" },
+                        { "ruleId": "942100" },
+                        { "ruleId": "942110" },
+                        { "ruleId": "942120" },
+                        { "ruleId": "942130" },
+                        { "ruleId": "942140" },
+                        { "ruleId": "942150" },
+                        { "ruleId": "942160" },
+                        { "ruleId": "942170" },
+                        { "ruleId": "942180" },
+                        { "ruleId": "942190" },
+                        { "ruleId": "942200" },
+                        { "ruleId": "942210" },
+                        { "ruleId": "942220" },
+                        { "ruleId": "942230" },
+                        { "ruleId": "942240" },
+                        { "ruleId": "942250" },
+                        { "ruleId": "942251" },
+                        { "ruleId": "942260" },
+                        { "ruleId": "942270" },
+                        { "ruleId": "942280" },
+                        { "ruleId": "942290" },
+                        { "ruleId": "942300" },
+                        { "ruleId": "942310" },
+                        { "ruleId": "942320" },
+                        { "ruleId": "942330" },
+                        { "ruleId": "942340" },
+                        { "ruleId": "942350" },
+                        { "ruleId": "942360" },
+                        { "ruleId": "942361" },
+                        { "ruleId": "942370" },
+                        { "ruleId": "942380" },
+                        { "ruleId": "942390" },
+                        { "ruleId": "942400" },
+                        { "ruleId": "942410" },
+                        { "ruleId": "942420" },
+                        { "ruleId": "942421" },
+                        { "ruleId": "942430" },
+                        { "ruleId": "942431" },
+                        { "ruleId": "942432" },
+                        { "ruleId": "942450" },
+                        { "ruleId": "942460" },
+                        { "ruleId": "942470" },
+                        { "ruleId": "942480" },
+                        { "ruleId": "942490" },
+                        { "ruleId": "942500" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "General",
+                      "rules": [
+                        { "ruleId": "200002" },
+                        { "ruleId": "200003" },
+                        { "ruleId": "200004" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "Known-CVEs",
+                      "rules": [
+                        { "ruleId": "800100" },
+                        { "ruleId": "800110" },
+                        { "ruleId": "800111" },
+                        { "ruleId": "800112" },
+                        { "ruleId": "800113" },
+                        { "ruleId": "800114" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-911-METHOD-ENFORCEMENT",
+                      "rules": [
+                        { "ruleId": "911100" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-913-SCANNER-DETECTION",
+                      "rules": [
+                        { "ruleId": "913100" },
+                        { "ruleId": "913101" },
+                        { "ruleId": "913102" },
+                        { "ruleId": "913110" },
+                        { "ruleId": "913120" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-920-PROTOCOL-ENFORCEMENT",
+                      "rules": [
+                        { "ruleId": "920100" },
+                        { "ruleId": "920120" },
+                        { "ruleId": "920121" },
+                        { "ruleId": "920160" },
+                        { "ruleId": "920170" },
+                        { "ruleId": "920171" },
+                        { "ruleId": "920180" },
+                        { "ruleId": "920190" },
+                        { "ruleId": "920200" },
+                        { "ruleId": "920201" },
+                        { "ruleId": "920202" },
+                        { "ruleId": "920210" },
+                        { "ruleId": "920220" },
+                        { "ruleId": "920230" },
+                        { "ruleId": "920240" },
+                        { "ruleId": "920250" },
+                        { "ruleId": "920260" },
+                        { "ruleId": "920270" },
+                        { "ruleId": "920271" },
+                        { "ruleId": "920272" },
+                        { "ruleId": "920273" },
+                        { "ruleId": "920274" },
+                        { "ruleId": "920280" },
+                        { "ruleId": "920290" },
+                        { "ruleId": "920300" },
+                        { "ruleId": "920310" },
+                        { "ruleId": "920311" },
+                        { "ruleId": "920320" },
+                        { "ruleId": "920330" },
+                        { "ruleId": "920340" },
+                        { "ruleId": "920341" },
+                        { "ruleId": "920350" },
+                        { "ruleId": "920420" },
+                        { "ruleId": "920430" },
+                        { "ruleId": "920440" },
+                        { "ruleId": "920450" },
+                        { "ruleId": "920460" },
+                        { "ruleId": "920470" },
+                        { "ruleId": "920480" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-921-PROTOCOL-ATTACK",
+                      "rules": [
+                        { "ruleId": "921110" },
+                        { "ruleId": "921120" },
+                        { "ruleId": "921130" },
+                        { "ruleId": "921140" },
+                        { "ruleId": "921150" },
+                        { "ruleId": "921151" },
+                        { "ruleId": "921160" },
+                        { "ruleId": "921170" },
+                        { "ruleId": "921180" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-930-APPLICATION-ATTACK-LFI",
+                      "rules": [
+                        { "ruleId": "930100" },
+                        { "ruleId": "930110" },
+                        { "ruleId": "930120" },
+                        { "ruleId": "930130" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-931-APPLICATION-ATTACK-RFI",
+                      "rules": [
+                        { "ruleId": "931100" },
+                        { "ruleId": "931110" },
+                        { "ruleId": "931120" },
+                        { "ruleId": "931130" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-932-APPLICATION-ATTACK-RCE",
+                      "rules": [
+                        { "ruleId": "932100" },
+                        { "ruleId": "932105" },
+                        { "ruleId": "932106" },
+                        { "ruleId": "932110" },
+                        { "ruleId": "932115" },
+                        { "ruleId": "932120" },
+                        { "ruleId": "932130" },
+                        { "ruleId": "932140" },
+                        { "ruleId": "932150" },
+                        { "ruleId": "932160" },
+                        { "ruleId": "932170" },
+                        { "ruleId": "932171" },
+                        { "ruleId": "932180" },
+                        { "ruleId": "932190" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-933-APPLICATION-ATTACK-PHP",
+                      "rules": [
+                        { "ruleId": "933100" },
+                        { "ruleId": "933110" },
+                        { "ruleId": "933111" },
+                        { "ruleId": "933120" },
+                        { "ruleId": "933130" },
+                        { "ruleId": "933131" },
+                        { "ruleId": "933140" },
+                        { "ruleId": "933150" },
+                        { "ruleId": "933151" },
+                        { "ruleId": "933160" },
+                        { "ruleId": "933161" },
+                        { "ruleId": "933170" },
+                        { "ruleId": "933180" },
+                        { "ruleId": "933190" },
+                        { "ruleId": "933200" },
+                        { "ruleId": "933210" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-941-APPLICATION-ATTACK-XSS",
+                      "rules": [
+                        { "ruleId": "941100" },
+                        { "ruleId": "941101" },
+                        { "ruleId": "941110" },
+                        { "ruleId": "941120" },
+                        { "ruleId": "941130" },
+                        { "ruleId": "941140" },
+                        { "ruleId": "941150" },
+                        { "ruleId": "941160" },
+                        { "ruleId": "941170" },
+                        { "ruleId": "941180" },
+                        { "ruleId": "941190" },
+                        { "ruleId": "941200" },
+                        { "ruleId": "941210" },
+                        { "ruleId": "941220" },
+                        { "ruleId": "941230" },
+                        { "ruleId": "941240" },
+                        { "ruleId": "941250" },
+                        { "ruleId": "941260" },
+                        { "ruleId": "941270" },
+                        { "ruleId": "941280" },
+                        { "ruleId": "941290" },
+                        { "ruleId": "941300" },
+                        { "ruleId": "941310" },
+                        { "ruleId": "941320" },
+                        { "ruleId": "941330" },
+                        { "ruleId": "941340" },
+                        { "ruleId": "941350" },
+                        { "ruleId": "941360" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION",
+                      "rules": [
+                        { "ruleId": "943100" },
+                        { "ruleId": "943110" },
+                        { "ruleId": "943120" }
+                      ]
+                    },
+                    {
+                      "ruleGroupName": "REQUEST-944-APPLICATION-ATTACK-JAVA",
+                      "rules": [
+                        { "ruleId": "944100" },
+                        { "ruleId": "944110" },
+                        { "ruleId": "944120" },
+                        { "ruleId": "944130" },
+                        { "ruleId": "944200" },
+                        { "ruleId": "944210" },
+                        { "ruleId": "944240" },
+                        { "ruleId": "944250" }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "type": "Microsoft.Network/applicationGateways",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('agwName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "[parameters('agwSku')]",
+          "tier": "WAF_v2"
+        },
+        "enableHttp2": true,
+        "autoscaleConfiguration": {
+          "minCapacity": 0,
+          "maxCapacity": 2
+        },
+        "gatewayIPConfigurations": [
+          {
+            "name": "agwIpConfig",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnetDMZName'))]"
+              }
+            }
+          }
+        ],
+        "sslCertificates": [
+          {
+            "name": "agwSslCert",
+            "properties": {
+              "data": "[parameters('certData')]",
+              "password": "[parameters('certPassword')]"
+            }
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "agwFrontendIP",
+            "properties": {
+              "PublicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPName'))]"
+              }
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "agwFrontendPort",
+            "properties": {
+              "Port": 443
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "agwBackendPool",
+            "properties": {
+              "BackendAddresses": [
+                {
+                  "IpAddress": "[parameters('backendIpAddress')]"
+                }
+              ]
+            }
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "agwBackendHttpSettings-keycloak",
+            "properties": {
+              "Port": 8080,
+              "Protocol": "Http",
+              "CookieBasedAffinity": "Enabled",
+              "pickHostNameFromBackendAddress": false,
+              "affinityCookieName": "AGWAffinityKeycloak",
+              "requestTimeout": 20
+            }
+          },
+          {
+            "name": "agwBackendHttpSettings-backend",
+            "properties": {
+              "Port": 4000,
+              "Protocol": "Http",
+              "CookieBasedAffinity": "Enabled",
+              "pickHostNameFromBackendAddress": false,
+              "affinityCookieName": "AGWAffinityBackend",
+              "requestTimeout": 20
+            }
+          },
+          {
+            "name": "agwBackendHttpSettings-frontend",
+            "properties": {
+              "Port": 3000,
+              "Protocol": "Http",
+              "CookieBasedAffinity": "Enabled",
+              "pickHostNameFromBackendAddress": false,
+              "affinityCookieName": "AGWAffinityFrontend",
+              "requestTimeout": 20
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "agwHttpListener-keycloak",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations',variables('agwName'), 'agwFrontendIP')]"
+              },
+              "FrontendPort": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',variables('agwName'), 'agwFrontendPort')]"
+              },
+              "Protocol": "Https",
+              "SslCertificate": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/sslCertificates',variables('agwName'), 'agwSslCert')]"
+              },
+              "hostName": "[format('keycloak.{0}', parameters('rootDomain'))]",
+              "hostNames": [],
+              "requireServerNameIndication": true,
+              "customErrorConfigurations": [],
+              "firewallPolicy": {
+                "id": "[resourceId('Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies',variables('WAFPolicyKeycloak'))]"
+              }
+            }
+          },
+          {
+            "name": "agwHttpListener-backend",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations',variables('agwName'), 'agwFrontendIP')]"
+              },
+              "FrontendPort": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',variables('agwName'), 'agwFrontendPort')]"
+              },
+              "Protocol": "Https",
+              "SslCertificate": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/sslCertificates',variables('agwName'), 'agwSslCert')]"
+              },
+              "hostName": "[format('backend.{0}', parameters('rootDomain'))]",
+              "hostNames": [],
+              "requireServerNameIndication": true,
+              "customErrorConfigurations": []
+            }
+          },
+          {
+            "name": "agwHttpListener-frontend",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations',variables('agwName'), 'agwFrontendIP')]"
+              },
+              "FrontendPort": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts',variables('agwName'), 'agwFrontendPort')]"
+              },
+              "Protocol": "Https",
+              "SslCertificate": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/sslCertificates',variables('agwName'), 'agwSslCert')]"
+              },
+              "hostName": "[format('{0}', parameters('rootDomain'))]",
+              "hostNames": [],
+              "requireServerNameIndication": true,
+              "customErrorConfigurations": []
+            }
+          }
+        ],
+        "requestRoutingRules": [
+          {
+            "Name": "rule-keycloak",
+            "properties": {
+              "RuleType": "Basic",
+              "priority": 1,
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners',variables('agwName'), 'agwHttpListener-keycloak')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools',variables('agwName'), 'agwBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection',variables('agwName'), 'agwBackendHttpSettings-keycloak')]"
+              }
+            }
+          },
+          {
+            "Name": "rule-backend",
+            "properties": {
+              "RuleType": "Basic",
+              "priority": 2,
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners',variables('agwName'), 'agwHttpListener-backend')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools',variables('agwName'), 'agwBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection',variables('agwName'), 'agwBackendHttpSettings-backend')]"
+              }
+            }
+          },
+          {
+            "Name": "rule-frontend",
+            "properties": {
+              "RuleType": "Basic",
+              "priority": 3,
+              "httpListener": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners',variables('agwName'), 'agwHttpListener-frontend')]"
+              },
+              "backendAddressPool": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools',variables('agwName'), 'agwBackendPool')]"
+              },
+              "backendHttpSettings": {
+                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection',variables('agwName'), 'agwBackendHttpSettings-frontend')]"
+              }
+            }
+          }
+        ],
+        "firewallPolicy": {
+          "id": "[resourceId('Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies',variables('WAFPolicyDefault'))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName'))]",
+        "[resourceId('Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies',variables('WAFPolicyKeycloak'))]",
+        "[resourceId('Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies',variables('WAFPolicyDefault'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "publicIp": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPName')), '2023-11-01').ipAddress]"
+    }
+  }
+}
