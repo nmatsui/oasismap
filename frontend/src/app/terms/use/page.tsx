@@ -12,19 +12,19 @@ const TermsOfService: React.FC = () => {
     >
       <Grid item xs={12} md={6}>
         <Grid item textAlign="center" sx={{ my: 2 }}>
-          <Typography variant="h5">（雛形）Well-Being可視化アプリ オープンベータ版 実証実験参加同意事項</Typography>
+          <Typography variant="h5">（雛形）地域幸福度可視化アプリ オープンベータ版 実証実験参加同意事項</Typography>
         </Grid>
         <Grid item textAlign="right">
           <Typography variant="body1">【自治体名】   </Typography>
           <Typography variant="body1">yyyy年mm月dd日</Typography>
         </Grid>
         <Grid item textAlign="left" sx={{ my: 2 }}>
-        この度は、【自治体名】が実施する“Well-Being可視化アプリ オープンベータ版”の実証実験にご協力いただき、誠にありがとうございます。本実証実験への参加にあたり、以下の内容をご確認のうえ、アカウント入力画面にチェックをお入れください。
+        この度は、【自治体名】が実施する“地域幸福度可視化アプリ オープンベータ版”の実証実験にご協力いただき、誠にありがとうございます。本実証実験への参加にあたり、以下の内容をご確認のうえ、アカウント入力画面にチェックをお入れください。
           <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2 }}>
             １．実証実験の概要
           </Typography>
           <Typography variant="body1">
-            Well-Being可視化アプリは、地域住民が日常の活動での感情や幸福度をリアルタイムで記録・共有できるアプリケーションです。
+            地域幸福度可視化アプリは、地域住民が日常の活動での感情や幸福度をリアルタイムで記録・共有できるアプリケーションです。
             本実証実験は、住民参加型のまちづくりを促進し、地域の幸福度向上を目指すものです。
           </Typography>
           <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2 }}>
@@ -38,7 +38,7 @@ const TermsOfService: React.FC = () => {
             ３．提供サービス
           </Typography>
           <Typography variant="body1">
-            ・Well-Being可視化アプリ利用者アプリの提供<br/>
+            ・地域幸福度可視化アプリ利用者アプリの提供<br/>
             ・アプリ利用に関するサポート
           </Typography>
           <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 2 }}>
