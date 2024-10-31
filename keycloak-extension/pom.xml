@@ -32,7 +32,7 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
             <scope>provided</scope>
-            <version>23.0.4</version>
+            <version>25.0.4</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
