@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsNotAllHappinessZero } from '../validation/is-not-all-happiness-zero';
+import { IsNotOrionForbiddenChars } from '../validation/is-not-orion-forbidden-chars';
 
 class Answer {
   @IsNotEmpty()
@@ -50,6 +51,7 @@ export class CreateHappinessDto {
 
   @IsOptional()
   @MaxLength(30)
+  @IsNotOrionForbiddenChars()
   readonly memo: string;
 
   @ValidateNested()
