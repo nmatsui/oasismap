@@ -35,7 +35,9 @@ class Answer {
 }
 
 export class CreateHappinessDto {
+  @IsNotEmpty()
   readonly latitude: number;
+  @IsNotEmpty()
   readonly longitude: number;
 
   @IsOptional()
