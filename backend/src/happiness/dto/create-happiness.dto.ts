@@ -1,4 +1,9 @@
-import { IsNotEmpty, ValidateNested } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsNotAllHappinessZero } from '../validation/is-not-all-happiness-zero';
 
@@ -25,6 +30,9 @@ class Answer {
 export class CreateHappinessDto {
   readonly latitude: number;
   readonly longitude: number;
+
+  @IsOptional()
+  @MaxLength(30)
   readonly memo: string;
 
   @ValidateNested()
