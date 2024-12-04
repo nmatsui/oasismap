@@ -1,4 +1,5 @@
 import {
+  IsIn,
   IsNotEmpty,
   IsOptional,
   MaxLength,
@@ -9,21 +10,27 @@ import { IsNotAllHappinessZero } from '../validation/is-not-all-happiness-zero';
 
 class Answer {
   @IsNotEmpty()
+  @IsIn([0, 1])
   happiness1: number;
 
   @IsNotEmpty()
+  @IsIn([0, 1])
   happiness2: number;
 
   @IsNotEmpty()
+  @IsIn([0, 1])
   happiness3: number;
 
   @IsNotEmpty()
+  @IsIn([0, 1])
   happiness4: number;
 
   @IsNotEmpty()
+  @IsIn([0, 1])
   happiness5: number;
 
   @IsNotEmpty()
+  @IsIn([0, 1])
   happiness6: number;
 }
 
