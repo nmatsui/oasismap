@@ -1,6 +1,9 @@
 import {
   IsIn,
+  IsLatitude,
+  IsLongitude,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   MaxLength,
   ValidateNested,
@@ -36,8 +39,13 @@ class Answer {
 
 export class CreateHappinessDto {
   @IsNotEmpty()
+  @IsLatitude()
+  @IsNumber()
   readonly latitude: number;
+
   @IsNotEmpty()
+  @IsLongitude()
+  @IsNumber()
   readonly longitude: number;
 
   @IsOptional()
