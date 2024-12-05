@@ -11,6 +11,7 @@ import {
 import { Type } from 'class-transformer';
 import { IsNotAllHappinessZero } from '../validation/is-not-all-happiness-zero';
 import { IsNotOrionForbiddenChars } from '../validation/is-not-orion-forbidden-chars';
+import { IsNotSurrogatePair } from '../validation/is-not-surrogate-pair';
 
 class Answer {
   @IsNotEmpty()
@@ -52,6 +53,7 @@ export class CreateHappinessDto {
   @IsOptional()
   @MaxLength(30)
   @IsNotOrionForbiddenChars()
+  @IsNotSurrogatePair()
   readonly memo: string;
 
   @ValidateNested()

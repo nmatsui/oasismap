@@ -77,4 +77,30 @@ describe('CreateHappinessDto', () => {
       isNotOrionForbiddenChar: 'memo must not contain <, >, ", \', =, ;, (, ).',
     });
   });
+
+  it('should fail validation when memo has surrogate pair', async () => {
+    const requestParam: CreateHappinessDto = {
+      latitude: 35.629327,
+      longitude: 139.72382,
+      memo: 'ダミーメモ😁',
+      answers: {
+        happiness1: 1,
+        happiness2: 0,
+        happiness3: 1,
+        happiness4: 1,
+        happiness5: 1,
+        happiness6: 0,
+      },
+    };
+    const CreateHappinessObject = plainToInstance(
+      CreateHappinessDto,
+      requestParam,
+    );
+    const errors = await validate(CreateHappinessObject);
+
+    expect(errors.length).toBe(1);
+    expect(errors[0].constraints).toEqual({
+      isNotSurrogatePair: 'memo must not be a surrogate pair.',
+    });
+  });
 });
