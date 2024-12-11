@@ -50,6 +50,7 @@
     |VM_ADMIN_PUBLIC_KEY_PATH|Azure VMの管理者アカウントでSSH接続するための公開鍵の絶対パス||
     |VM_SKU|Azure VMのサイズ|Standard_D4s_v3|
     |VM_OSDISK_SKU|Azure VMのディスクのSKU|Standard_LRS|
+    |PARENT_DOMAIN_NAME|親DNSゾーン名||
     |ROOT_DOMAIN_NAME|oasismapを起動するルートドメイン名||
     |LEGO_EMAIL|Let's EncryptでSSL証明書を取得するために必要なEmailアドレス||
     |PFX_PASSWORD|Let's Encryptから発行されたサーバ証明書と秘密鍵をPKCS#12(pfx)へ変換するためのパスワード||
