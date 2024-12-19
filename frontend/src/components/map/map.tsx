@@ -4,9 +4,9 @@ import {
   ZoomControl,
   useMap,
   Marker,
-  Popup,
   LayersControl,
   LayerGroup,
+  useMapEvents,
 } from 'react-leaflet'
 import { LatLngTuple } from 'leaflet'
 import React, { useState, useEffect } from 'react'
@@ -14,6 +14,8 @@ import 'leaflet/dist/leaflet.css'
 import { getIconByType } from '../utils/icon'
 import { getCurrentPosition } from '../../libs/geolocation'
 import { IconType } from '@/types/icon-type'
+import { ControllablePopup } from './controllablePopup'
+import { EntityByEntityId } from '@/types/entityByEntityId'
 
 const loadEnvAsNumber = (
   variable: string | undefined,
@@ -39,11 +41,23 @@ type Props = {
   }
   iconType: IconType
   pinData: any[]
+  selectedEntityId?: string | null
+  entityByEntityId?: EntityByEntityId
+  onPopupClose?: () => void
 }
 
 const ClosePopup = () => {
   const map = useMap()
   map.closePopup()
+  return null
+}
+
+const OnPopupClose = ({ onPopupClose }: { onPopupClose: () => void }) => {
+  useMapEvents({
+    popupclose: () => {
+      onPopupClose()
+    },
+  })
   return null
 }
 
@@ -66,11 +80,13 @@ const MapOverlay = ({
   type,
   filteredPins,
   layerIndex,
+  selectedPin,
 }: {
   iconType: IconType
   type: string
   filteredPins: any[]
   layerIndex: number
+  selectedPin: any
 }) => (
   <LayersControl.Overlay checked name={type}>
     <LayerGroup>
@@ -81,7 +97,10 @@ const MapOverlay = ({
           icon={getIconByType(iconType, pin.type, pin.answer)}
           zIndexOffset={-layerIndex}
         >
-          <Popup>
+          <ControllablePopup
+            isOpened={pin.id === selectedPin?.id}
+            position={[pin.latitude, pin.longitude]}
+          >
             <table border={1}>
               {pin.basetime && (
                 <thead>
@@ -118,14 +137,20 @@ const MapOverlay = ({
                 </tr>
               </tbody>
             </table>
-          </Popup>
+          </ControllablePopup>
         </Marker>
       ))}
     </LayerGroup>
   </LayersControl.Overlay>
 )
 
-const Map: React.FC<Props> = ({ iconType, pinData }) => {
+const Map: React.FC<Props> = ({
+  iconType,
+  pinData,
+  selectedEntityId,
+  entityByEntityId,
+  onPopupClose,
+}) => {
   const [currentPosition, setCurrentPosition] = useState<LatLngTuple | null>(
     null
   )
@@ -171,6 +196,11 @@ const Map: React.FC<Props> = ({ iconType, pinData }) => {
   const filteredPinsByType = (type: string) =>
     pinData.filter((pin) => pin.type === type)
 
+  let selectedEntityUuid: string | undefined = undefined
+  if (selectedEntityId) {
+    selectedEntityUuid = entityByEntityId?.[selectedEntityId]?.id
+  }
+
   return (
     <MapContainer
       center={currentPosition}
@@ -186,17 +216,24 @@ const Map: React.FC<Props> = ({ iconType, pinData }) => {
         minZoom={5}
       />
       <LayersControl position="topright">
-        {Object.keys(questionTitles).map((type, index) => (
-          <MapOverlay
-            key={type}
-            iconType={iconType}
-            type={questionTitles[type]}
-            filteredPins={filteredPinsByType(type)}
-            layerIndex={index}
-          />
-        ))}
+        {Object.keys(questionTitles).map((type, index) => {
+          const filteredPins = filteredPinsByType(type)
+          return (
+            <MapOverlay
+              key={type}
+              iconType={iconType}
+              type={questionTitles[type]}
+              layerIndex={index}
+              filteredPins={filteredPins}
+              selectedPin={filteredPins.find(
+                (pin) => pin.id === selectedEntityUuid
+              )}
+            />
+          )
+        })}
       </LayersControl>
-      <ClosePopup />
+      {!selectedEntityId && <ClosePopup />}
+      {onPopupClose && <OnPopupClose onPopupClose={onPopupClose} />}
     </MapContainer>
   )
 }

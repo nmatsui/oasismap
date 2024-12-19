@@ -2,6 +2,7 @@ import { HappinessKey } from '@/types/happiness-key'
 
 export interface Data {
   id: string
+  entityId: string
   type: HappinessKey
   location: {
     type: string

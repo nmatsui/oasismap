@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Box,
   Collapse,
@@ -18,6 +19,7 @@ import {
   KeyboardArrowUp,
   DeleteForever,
 } from '@mui/icons-material'
+import LayersIcon from '@mui/icons-material/Layers'
 import { Data } from '@/types/happiness-list-response'
 import { timestampToDateTime } from '@/libs/date-converter'
 import DeleteConfirmationDialog from '@/components/happiness/delete-confirmation-dialog'
@@ -35,6 +37,7 @@ interface RowProps {
 
 const Row: React.FC<RowProps> = ({ row, openDialog }) => {
   const [isCollapseOpen, setIsCollapseOpen] = useState(false)
+  const router = useRouter()
 
   return (
     <>
@@ -76,13 +79,27 @@ const Row: React.FC<RowProps> = ({ row, openDialog }) => {
           {row.answers?.happiness6 ? <CheckCircle /> : null}
         </TableCell>
         <TableCell>
+          <IconButton
+            size="small"
+            onClick={() => {
+              const params = new URLSearchParams()
+              params.set('entityId', row.id)
+              params.set('timestamp', row.timestamp)
+              router.push(`/happiness/me?${params.toString()}`)
+            }}
+            sx={{ px: '0px' }}
+          >
+            <LayersIcon sx={{ color: 'black' }} />
+          </IconButton>
+        </TableCell>
+        <TableCell>
           <IconButton onClick={() => openDialog(row)}>
             <DeleteForever sx={{ color: 'black' }} />
           </IconButton>
         </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell sx={{ py: 0 }} colSpan={8}>
+        <TableCell sx={{ py: 0 }} colSpan={9}>
           <Collapse in={isCollapseOpen} timeout="auto" unmountOnExit>
             <Box sx={{ m: 1 }}>
               <Typography variant="body2" gutterBottom>
@@ -152,6 +169,7 @@ const ListTable: React.FC<ListTableProps> = ({
             <TableCell>自分を取り戻せる</TableCell>
             <TableCell>自慢</TableCell>
             <TableCell>思い出</TableCell>
+            <TableCell sx={{ width: '28px' }} />
             <TableCell sx={{ width: '28px' }} />
           </TableRow>
         </TableHead>
