@@ -13,7 +13,7 @@ import { IsNotAllHappinessZero } from '../validation/is-not-all-happiness-zero';
 import { IsNotOrionForbiddenChars } from '../validation/is-not-orion-forbidden-chars';
 import { IsNotSurrogatePair } from '../validation/is-not-surrogate-pair';
 
-class Answer {
+export class Answer {
   @IsNotEmpty()
   @IsIn([0, 1])
   happiness1: number;
@@ -43,21 +43,21 @@ export class CreateHappinessDto {
   @IsNotEmpty()
   @IsLatitude()
   @IsNumber()
-  readonly latitude: number;
+  latitude: number;
 
   @IsNotEmpty()
   @IsLongitude()
   @IsNumber()
-  readonly longitude: number;
+  longitude: number;
 
   @IsOptional()
   @MaxLength(30)
   @IsNotOrionForbiddenChars()
   @IsNotSurrogatePair()
-  readonly memo: string;
+  memo: string;
 
   @ValidateNested()
   @Type(() => Answer)
   @IsNotAllHappinessZero()
-  readonly answers: Answer;
+  answers: Answer;
 }
