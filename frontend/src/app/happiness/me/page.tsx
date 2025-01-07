@@ -70,6 +70,15 @@ const HappinessMe: React.FC = () => {
         return
       }
 
+      if (timestamp) {
+        noticeMessageContext.showMessage(
+          startProps.value.date.replace(/-/g, '/') +
+            ' ' +
+            'のデータを表示しました',
+          MessageType.Success
+        )
+      }
+
       const limit = 1000
       let offset = 0
       while (!willStop.current) {
