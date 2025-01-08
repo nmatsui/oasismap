@@ -72,12 +72,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = (props) => {
               <ListItemText primary="全体の幸福度" />
             </ListItemButton>
           </ListItem>
-          <ListItem key="happiness" disablePadding>
+          <ListItem key="happiness-export" disablePadding>
             <ListItemButton onClick={downloadCsv}>
               <ListItemText primary="データのエクスポート" />
             </ListItemButton>
           </ListItem>
-          <ListItem key="happiness" disablePadding>
+          <ListItem key="happiness-import" disablePadding>
             <ListItemButton onClick={() => router.push('/admin/import')}>
               <ListItemText primary="データのインポート" />
             </ListItemButton>
