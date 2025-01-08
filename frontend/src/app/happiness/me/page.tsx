@@ -21,11 +21,12 @@ const BarGraph = dynamic(() => import('@/components/happiness/bar-graph'), {
 import { myHappinessData, sumByTimestamp } from '@/libs/graph'
 import { messageContext } from '@/contexts/message-context'
 import { ERROR_TYPE } from '@/libs/constants'
-import { fetchData } from '@/libs/fetch'
+import { useFetchData } from '@/libs/fetch'
 import { toDateTime } from '@/libs/date-converter'
 import { useTokenFetchStatus } from '@/hooks/token-fetch-status'
 import { happinessSet } from '@/types/happiness-set'
 import { Pin } from '@/types/pin'
+import { LoadingContext } from '@/contexts/loading-context'
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
 
@@ -34,17 +35,18 @@ const HappinessMe: React.FC = () => {
   const router = useRouter()
   const [period, setPeriod] = useState(PeriodType.Month)
   const [pinData, setPinData] = useState<any>([])
-  const [isFetching, setIsfetching] = useState(false)
   const willStop = useRef(false)
   const [MyHappiness, setMyHappiness] = useState<any>([])
   const { isTokenFetched } = useTokenFetchStatus()
   const { startProps, endProps, updatedPeriod } = useDateTimeProps(period)
   const { update } = useSession()
+  const { isLoading, setIsLoading } = useContext(LoadingContext)
+  const { fetchData } = useFetchData()
 
   const getData = async () => {
     try {
+      setIsLoading(true)
       willStop.current = false
-      setIsfetching(true)
       setPinData([])
       setMyHappiness([])
 
@@ -116,7 +118,7 @@ const HappinessMe: React.FC = () => {
         )
       }
     } finally {
-      setIsfetching(false)
+      setIsLoading(false)
     }
   }
 
@@ -202,7 +204,7 @@ const HappinessMe: React.FC = () => {
                 onClick={() => {
                   setPeriod(PeriodType.Month)
                 }}
-                disabled={isFetching}
+                disabled={isLoading}
               >
                 月
               </Button>
@@ -212,7 +214,7 @@ const HappinessMe: React.FC = () => {
                 onClick={() => {
                   setPeriod(PeriodType.Day)
                 }}
-                disabled={isFetching}
+                disabled={isLoading}
               >
                 日
               </Button>
@@ -222,7 +224,7 @@ const HappinessMe: React.FC = () => {
                 onClick={() => {
                   setPeriod(PeriodType.Time)
                 }}
-                disabled={isFetching}
+                disabled={isLoading}
               >
                 時間
               </Button>
@@ -233,7 +235,7 @@ const HappinessMe: React.FC = () => {
               dateLabel="開始日"
               timeLabel="時間"
               period={period}
-              disabled={isFetching}
+              disabled={isLoading}
               {...startProps}
             />
           </Grid>
@@ -242,7 +244,7 @@ const HappinessMe: React.FC = () => {
               dateLabel="終了日"
               timeLabel="時間"
               period={period}
-              disabled={isFetching}
+              disabled={isLoading}
               {...endProps}
             />
           </Grid>
@@ -254,7 +256,7 @@ const HappinessMe: React.FC = () => {
                 fullWidth
                 sx={{ borderColor: 'primary.light' }}
                 onClick={getData}
-                disabled={isFetching}
+                disabled={isLoading}
               >
                 検索
               </Button>
