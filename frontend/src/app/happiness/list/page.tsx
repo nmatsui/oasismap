@@ -20,6 +20,7 @@ const HappinessList: React.FC = () => {
   const { update } = useSession()
   const [listData, setListData] = useState<Data[]>([])
   const willStop = useRef(false)
+  const [isLoaded, setIsLoaded] = useState(false)
 
   const getData = async () => {
     try {
@@ -61,6 +62,8 @@ const HappinessList: React.FC = () => {
           MessageType.Error
         )
       }
+    } finally {
+      setIsLoaded(true)
     }
   }
 
@@ -107,9 +110,11 @@ const HappinessList: React.FC = () => {
 
   return (
     <Grid sx={{ p: '16px' }}>
-      {listData.length >= 1 && (
-        <ListTable listData={listData} deleteListData={deleteListData} />
-      )}
+      <ListTable
+        listData={listData}
+        deleteListData={deleteListData}
+        isLoaded={isLoaded}
+      />
     </Grid>
   )
 }
