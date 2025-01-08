@@ -65,10 +65,12 @@ const MapOverlay = ({
   iconType,
   type,
   filteredPins,
+  layerIndex,
 }: {
   iconType: IconType
   type: string
   filteredPins: any[]
+  layerIndex: number
 }) => (
   <LayersControl.Overlay checked name={type}>
     <LayerGroup>
@@ -77,6 +79,7 @@ const MapOverlay = ({
           key={index}
           position={[pin.latitude, pin.longitude]}
           icon={getIconByType(iconType, pin.type, pin.answer)}
+          zIndexOffset={-layerIndex}
         >
           <Popup>
             <table border={1}>
@@ -183,12 +186,13 @@ const Map: React.FC<Props> = ({ iconType, pinData }) => {
         minZoom={5}
       />
       <LayersControl position="topright">
-        {Object.keys(questionTitles).map((type) => (
+        {Object.keys(questionTitles).map((type, index) => (
           <MapOverlay
             key={type}
             iconType={iconType}
             type={questionTitles[type]}
             filteredPins={filteredPinsByType(type)}
+            layerIndex={index}
           />
         ))}
       </LayersControl>
