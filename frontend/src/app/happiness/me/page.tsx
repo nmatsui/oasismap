@@ -111,14 +111,20 @@ const HappinessMe: React.FC = () => {
           }
         })
 
-        setEntityByEntityId((prevEntityByEntityId: EntityByEntityId) => {
-          const nextEntityByEntityId = { ...prevEntityByEntityId }
-          data['data'].forEach((entity: Data) => {
-            if (entity.answers[entity.type] === 0) return
-            nextEntityByEntityId[entity['entityId']] = entity
+        if (
+          selectedEntityId &&
+          timestamp &&
+          Object.keys(entityByEntityId).length === 0
+        ) {
+          setEntityByEntityId((prevEntityByEntityId: EntityByEntityId) => {
+            const nextEntityByEntityId = { ...prevEntityByEntityId }
+            data['data'].forEach((entity: Data) => {
+              if (entity.answers[entity.type] === 0) return
+              nextEntityByEntityId[entity['entityId']] = entity
+            })
+            return nextEntityByEntityId
           })
-          return nextEntityByEntityId
-        })
+        }
 
         offset += data['count']
       }
