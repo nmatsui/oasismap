@@ -70,15 +70,6 @@ const HappinessMe: React.FC = () => {
         return
       }
 
-      if (timestamp) {
-        noticeMessageContext.showMessage(
-          startProps.value.date.replace(/-/g, '/') +
-            ' ' +
-            'のデータを表示しました',
-          MessageType.Success
-        )
-      }
-
       const limit = 1000
       let offset = 0
       while (!willStop.current) {
@@ -130,6 +121,15 @@ const HappinessMe: React.FC = () => {
         })
 
         offset += data['count']
+      }
+
+      if (timestamp && Object.keys(entityByEntityId).length === 0) {
+        noticeMessageContext.showMessage(
+          startProps.value.date.replace(/-/g, '/') +
+            ' ' +
+            'のデータを表示しました',
+          MessageType.Success
+        )
       }
     } catch (error) {
       console.error('Error fetching data:', error)
