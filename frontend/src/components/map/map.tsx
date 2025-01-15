@@ -8,8 +8,8 @@ import {
   LayerGroup,
   useMapEvents,
 } from 'react-leaflet'
-import { LatLngTuple, divIcon } from 'leaflet'
 import React, { useState, useEffect, useContext } from 'react'
+import { LatLngTuple, LatLngBounds, divIcon } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getIconByType } from '../utils/icon'
 import { IconType } from '@/types/icon-type'
@@ -57,6 +57,7 @@ type Props = {
   iconType: IconType
   pinData: any[]
   initialEntityId?: string | null
+  setBounds?: React.Dispatch<LatLngBounds | undefined>
   entityByEntityId?: EntityByEntityId
   onPopupClose?: () => void
 }
@@ -117,10 +118,30 @@ const MapOverlay = ({
   </LayersControl.Overlay>
 )
 
+const Bounds = ({
+  setBounds,
+}: {
+  setBounds: React.Dispatch<LatLngBounds | undefined>
+}) => {
+  const map = useMap()
+
+  useEffect(() => {
+    setBounds(map.getBounds())
+  }, [setBounds, map])
+
+  useMapEvents({
+    moveend: () => {
+      setBounds(map.getBounds())
+    },
+  })
+  return null
+}
+
 const Map: React.FC<Props> = ({
   iconType,
   pinData,
   initialEntityId,
+  setBounds,
   entityByEntityId,
   onPopupClose,
 }) => {
@@ -240,6 +261,7 @@ const Map: React.FC<Props> = ({
         scrollWheelZoom={true}
         zoomControl={false}
       >
+        {setBounds && <Bounds setBounds={setBounds} />}
         <MoveToCurrentPositionButton />
         <ZoomControl position={'bottomleft'} />
         <TileLayer
