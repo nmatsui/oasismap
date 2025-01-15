@@ -23,6 +23,7 @@ import { ourHappinessData } from '@/libs/graph'
 import { messageContext } from '@/contexts/message-context'
 import { useFetchData } from '@/libs/fetch'
 import { ERROR_TYPE, PROFILE_TYPE, HAPPINESS_KEYS } from '@/libs/constants'
+import { HappinessKey } from '@/types/happiness-key'
 import { toDateTime } from '@/libs/date-converter'
 import { useTokenFetchStatus } from '@/hooks/token-fetch-status'
 import {
@@ -44,6 +45,9 @@ const HappinessAll: React.FC = () => {
   const { isTokenFetched } = useTokenFetchStatus()
   const { startProps, endProps, updatedPeriod } = useDateTimeProps(period)
   const { data: session, update } = useSession()
+  const [selectedLayers, setSelectedLayers] = useState<
+    HappinessKey[] | undefined
+  >(HAPPINESS_KEYS)
   const [bounds, setBounds] = useState<LatLngBounds | undefined>(undefined)
   const { isLoading, setIsLoading } = useContext(LoadingContext)
   const { fetchData } = useFetchData()
@@ -246,6 +250,8 @@ const HappinessAll: React.FC = () => {
           fiware={{ servicePath: '', tenant: '' }}
           iconType="heatmap"
           pinData={pinData}
+          selectedLayers={selectedLayers}
+          setSelectedLayers={setSelectedLayers}
           setBounds={
             session?.user?.type === PROFILE_TYPE.ADMIN ? setBounds : undefined
           }
@@ -276,6 +282,7 @@ const HappinessAll: React.FC = () => {
               color={graphColors}
               xTickFormatter={renderCustomDayTick}
               isLoaded={isLoaded}
+              selectedLayers={selectedLayers}
             />
           </ResponsiveContainer>
         </Grid>
