@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Box,
   Collapse,
@@ -11,6 +12,10 @@ import {
   TableRow,
   Typography,
   Paper,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material'
 import {
   CheckCircle,
@@ -18,6 +23,8 @@ import {
   KeyboardArrowUp,
   DeleteForever,
 } from '@mui/icons-material'
+import LayersIcon from '@mui/icons-material/Layers'
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import { Data } from '@/types/happiness-list-response'
 import { timestampToDateTime } from '@/libs/date-converter'
 import DeleteConfirmationDialog from '@/components/happiness/delete-confirmation-dialog'
@@ -35,6 +42,19 @@ interface RowProps {
 
 const Row: React.FC<RowProps> = ({ row, openDialog }) => {
   const [isCollapseOpen, setIsCollapseOpen] = useState(false)
+  const [anchorElement, setAnchorElement] = React.useState<null | HTMLElement>(
+    null
+  )
+  const router = useRouter()
+
+  const open = Boolean(anchorElement)
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorElement(event.currentTarget)
+  }
+  const handleClose = () => {
+    setAnchorElement(null)
+  }
 
   return (
     <>
@@ -76,8 +96,8 @@ const Row: React.FC<RowProps> = ({ row, openDialog }) => {
           {row.answers?.happiness6 ? <CheckCircle /> : null}
         </TableCell>
         <TableCell>
-          <IconButton onClick={() => openDialog(row)}>
-            <DeleteForever sx={{ color: 'black' }} />
+          <IconButton onClick={handleClick}>
+            <MoreHorizIcon sx={{ color: 'black' }} />
           </IconButton>
         </TableCell>
       </TableRow>
@@ -104,6 +124,30 @@ const Row: React.FC<RowProps> = ({ row, openDialog }) => {
           </Collapse>
         </TableCell>
       </TableRow>
+      <Menu anchorEl={anchorElement} open={open} onClose={handleClose}>
+        <MenuItem
+          onClick={() => {
+            const params = new URLSearchParams()
+            params.set('entityId', row.id)
+            params.set('timestamp', row.timestamp)
+            router.push(`/happiness/me?${params.toString()}`)
+          }}
+        >
+          <ListItemIcon>
+            <LayersIcon sx={{ color: 'black' }} />
+          </ListItemIcon>
+          <ListItemText
+            primary="地図に表示"
+            secondary="選択した幸福度を地図に表示します"
+          />
+        </MenuItem>
+        <MenuItem onClick={() => openDialog(row)}>
+          <ListItemIcon>
+            <DeleteForever sx={{ color: 'black' }} />
+          </ListItemIcon>
+          <ListItemText primary="削除" secondary="選択した幸福度を削除します" />
+        </MenuItem>
+      </Menu>
     </>
   )
 }

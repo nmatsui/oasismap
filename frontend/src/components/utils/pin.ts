@@ -23,6 +23,7 @@ export function GetPin(arr: (Data | MapDataItem)[]): Pin[] {
       }
 
       return {
+        id: data.id,
         type: data.type,
         latitude: data.location.value.coordinates[0],
         longitude: data.location.value.coordinates[1],

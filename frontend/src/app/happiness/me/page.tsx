@@ -1,7 +1,7 @@
 'use client'
 import dynamic from 'next/dynamic'
 import { useState, useEffect, useContext, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { Button, ButtonGroup, Grid } from '@mui/material'
 import { PeriodType } from '@/types/period'
@@ -14,6 +14,8 @@ import {
   DateTimeTextbox,
   useDateTimeProps,
 } from '@/components/fields/date-time-textbox'
+import { EntityByEntityId } from '@/types/entityByEntityId'
+import { Data } from '@/types/happiness-me-response'
 
 const BarGraph = dynamic(() => import('@/components/happiness/bar-graph'), {
   ssr: false,
@@ -35,10 +37,18 @@ const HappinessMe: React.FC = () => {
   const router = useRouter()
   const [period, setPeriod] = useState(PeriodType.Month)
   const [pinData, setPinData] = useState<any>([])
+  const [entityByEntityId, setEntityByEntityId] = useState<EntityByEntityId>({})
   const willStop = useRef(false)
+  const isMounted = useRef(false)
   const [MyHappiness, setMyHappiness] = useState<any>([])
   const { isTokenFetched } = useTokenFetchStatus()
-  const { startProps, endProps, updatedPeriod } = useDateTimeProps(period)
+  const searchParams = useSearchParams()
+  const selectedEntityId = searchParams.get('entityId')
+  const timestamp = searchParams.get('timestamp')
+  const { startProps, endProps, updatedPeriod } = useDateTimeProps(
+    period,
+    timestamp
+  )
   const { update } = useSession()
   const { isLoading, setIsLoading } = useContext(LoadingContext)
   const { fetchData } = useFetchData()
@@ -49,6 +59,7 @@ const HappinessMe: React.FC = () => {
       willStop.current = false
       setPinData([])
       setMyHappiness([])
+      setEntityByEntityId({})
 
       const url = backendUrl + '/api/happiness/me'
       const startDateTime = toDateTime(startProps.value).toISO()
@@ -100,7 +111,31 @@ const HappinessMe: React.FC = () => {
           }
         })
 
+        if (
+          selectedEntityId &&
+          timestamp &&
+          Object.keys(entityByEntityId).length === 0
+        ) {
+          setEntityByEntityId((prevEntityByEntityId: EntityByEntityId) => {
+            const nextEntityByEntityId = { ...prevEntityByEntityId }
+            data['data'].forEach((entity: Data) => {
+              if (entity.answers[entity.type] === 0) return
+              nextEntityByEntityId[entity['entityId']] = entity
+            })
+            return nextEntityByEntityId
+          })
+        }
+
         offset += data['count']
+      }
+
+      if (timestamp && Object.keys(entityByEntityId).length === 0) {
+        noticeMessageContext.showMessage(
+          startProps.value.date.replace(/-/g, '/') +
+            ' ' +
+            'のデータを表示しました',
+          MessageType.Success
+        )
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -121,6 +156,14 @@ const HappinessMe: React.FC = () => {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    isMounted.current = true
+
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!isTokenFetched) return
@@ -160,6 +203,12 @@ const HappinessMe: React.FC = () => {
           fiware={{ servicePath: '', tenant: '' }}
           iconType="pin"
           pinData={pinData}
+          selectedEntityId={selectedEntityId}
+          entityByEntityId={entityByEntityId}
+          onPopupClose={() =>
+            // 画面遷移時に発火させないため、マウント時のみクエリパラメータの削除を実行
+            isMounted.current && router.replace('/happiness/me')
+          }
         />
       </Grid>
       <Grid
