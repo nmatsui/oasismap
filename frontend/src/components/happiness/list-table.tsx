@@ -25,6 +25,7 @@ import DeleteConfirmationDialog from '@/components/happiness/delete-confirmation
 interface ListTableProps {
   listData: Data[]
   deleteListData: (id: string) => void
+  isLoaded: boolean
 }
 
 interface RowProps {
@@ -107,7 +108,11 @@ const Row: React.FC<RowProps> = ({ row, openDialog }) => {
   )
 }
 
-const ListTable: React.FC<ListTableProps> = ({ listData, deleteListData }) => {
+const ListTable: React.FC<ListTableProps> = ({
+  listData,
+  deleteListData,
+  isLoaded,
+}) => {
   const [selectedData, setSelectedData] = useState<Data | null>(null)
 
   const deleteRowData = () => {
@@ -151,13 +156,21 @@ const ListTable: React.FC<ListTableProps> = ({ listData, deleteListData }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {listData.map((row) => (
-            <Row
-              key={row.id}
-              row={row}
-              openDialog={() => setSelectedData(row)}
-            />
-          ))}
+          {isLoaded === true && listData.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} sx={{ textAlign: 'center' }}>
+                データがありません
+              </TableCell>
+            </TableRow>
+          ) : (
+            listData.map((row) => (
+              <Row
+                key={row.id}
+                row={row}
+                openDialog={() => setSelectedData(row)}
+              />
+            ))
+          )}
         </TableBody>
       </Table>
       <DeleteConfirmationDialog
