@@ -232,7 +232,7 @@ const Map: React.FC<Props> = ({
         }}
         onClick={moveToCurrentPosition}
       >
-        <MyLocationIcon style={{ color: 'black' }} />
+        <MyLocationIcon style={{ color: 'blue' }} />
       </IconButton>
     )
   }
