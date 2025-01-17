@@ -50,7 +50,6 @@ const HappinessAll: React.FC = () => {
     try {
       setIsLoading(true)
       willStop.current = false
-      setIsfetching(true)
       setPinData([])
       setOurHappiness([])
 
