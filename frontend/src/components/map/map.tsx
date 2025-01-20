@@ -170,6 +170,7 @@ const Map: React.FC<Props> = ({
     // geolocation が http に対応していないため固定値を設定
     if (location.protocol === 'http:') {
       setCenter([defaultLatitude, defaultLongitude])
+      setCurrentPosition([defaultLatitude, defaultLongitude])
       return
     }
     const watchId = navigator.geolocation.watchPosition(
@@ -187,10 +188,11 @@ const Map: React.FC<Props> = ({
         setCurrentPosition(newPosition)
         setError(null)
       },
-      () => {
-        console.error('Error Get Current Position:', error)
-        setError(error)
+      (e) => {
+        console.error(e)
+        setError(e instanceof Error ? e : new Error(e.message))
         setCurrentPosition(null)
+        setCenter(null)
       },
       { enableHighAccuracy: true }
     )
@@ -198,7 +200,7 @@ const Map: React.FC<Props> = ({
     return () => {
       navigator.geolocation.clearWatch(watchId)
     }
-  }, [error])
+  }, [])
 
   const currentPositionIconHTML = renderToString(
     <CurrentPositionIcon style={{ fill: 'blue' }} />
@@ -236,15 +238,11 @@ const Map: React.FC<Props> = ({
       </IconButton>
     )
   }
-  if (center === null) {
-    return <p>Loading...</p>
-  }
   if (error) {
     console.error('Error: Unable to get current position.', error)
     return null
   }
-
-  if (currentPosition === null) {
+  if (center === null || currentPosition === null) {
     return <p>Loading...</p>
   }
 
