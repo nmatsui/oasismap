@@ -15,7 +15,7 @@ const BarGraph = (props: any) => {
     <>
       <h3 className="text-white text-center">{title}</h3>
       <ResponsiveContainer width="100%" height="100%">
-        {isLoaded === true && isEmptyData ? (
+        {isLoaded && isEmptyData ? (
           <div
             style={{
               border: '1px solid #a9a9a9',
