@@ -426,59 +426,59 @@ const Map: React.FC<Props> = ({
 
   return (
     <>
-    <MapContainer
-      center={currentPosition}
-      zoom={defaultZoom}
-      scrollWheelZoom={true}
-      zoomControl={false}
-      maxBounds={maxBounds}
-      maxBoundsViscosity={maxBoundsViscosity}
-    >
-      {setSelectedLayers && (
-        <SelectedLayers setSelectedLayers={setSelectedLayers} />
-      )}
-      {setBounds && <Bounds setBounds={setBounds} />}
-      <MoveToCurrentPositionButton />
-      <ZoomControl position={'bottomleft'} />
-      <TileLayer
-        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        maxZoom={18}
-        minZoom={5}
-      />
-      <LayersControl position="topright">
-        {HAPPINESS_KEYS.map((type, index) => {
-          const filteredPins = filteredPinsByType(type)
-          return (
-            <MapOverlay
-              key={type}
-              iconType={iconType}
-              type={questionTitles[type]}
-              layerIndex={index}
-              filteredPins={filteredPins}
-              initialPopupPin={filteredPins.find(
-                (pin) => pin.id === initialEntityUuid
-              )}
-              setSelectedPin={setSelectedPin}
-              setHighlightTarget={setHighlightTarget}
-              period={period}
-              activeTimestamp={activeTimestamp}
-            />
-          )
-        })}
-      </LayersControl>
-      {onPopupClose && <OnPopupClose onPopupClose={onPopupClose} />}
-      {currentPosition && (
-        <Marker position={currentPosition} icon={currentPositionIcon}></Marker>
-      )}
-      {highlightTarget && setHighlightTarget && (
-        <HighlightListener
-          highlightTarget={highlightTarget}
-          setHighlightTarget={setHighlightTarget}
+      <MapContainer
+        center={currentPosition}
+        zoom={defaultZoom}
+        scrollWheelZoom={true}
+        zoomControl={false}
+        maxBounds={maxBounds}
+        maxBoundsViscosity={maxBoundsViscosity}
+      >
+        {setSelectedLayers && (
+          <SelectedLayers setSelectedLayers={setSelectedLayers} />
+        )}
+        {setBounds && <Bounds setBounds={setBounds} />}
+        <MoveToCurrentPositionButton />
+        <ZoomControl position={'bottomleft'} />
+        <TileLayer
+          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={18}
+          minZoom={5}
         />
-      )}
-    </MapContainer>
-    <DetailModal data={selectedPin} onClose={() => setSelectedPin(null)} />
+        <LayersControl position="topright">
+          {HAPPINESS_KEYS.map((type, index) => {
+            const filteredPins = filteredPinsByType(type)
+            return (
+              <MapOverlay
+                key={type}
+                iconType={iconType}
+                type={questionTitles[type]}
+                layerIndex={index}
+                filteredPins={filteredPins}
+                initialPopupPin={filteredPins.find(
+                  (pin) => pin.id === initialEntityUuid
+                )}
+                setSelectedPin={setSelectedPin}
+                setHighlightTarget={setHighlightTarget}
+                period={period}
+                activeTimestamp={activeTimestamp}
+              />
+            )
+          })}
+        </LayersControl>
+        {onPopupClose && <OnPopupClose onPopupClose={onPopupClose} />}
+        {currentPosition && (
+          <Marker position={currentPosition} icon={currentPositionIcon}></Marker>
+        )}
+        {highlightTarget && setHighlightTarget && (
+          <HighlightListener
+            highlightTarget={highlightTarget}
+            setHighlightTarget={setHighlightTarget}
+          />
+        )}
+      </MapContainer>
+      <DetailModal data={selectedPin} onClose={() => setSelectedPin(null)} />
     </>
   )
 }
