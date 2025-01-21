@@ -9,7 +9,7 @@ import {
   useMapEvents,
 } from 'react-leaflet'
 import { LatLngTuple, divIcon } from 'leaflet'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext } from 'react'
 import 'leaflet/dist/leaflet.css'
 import { getIconByType } from '../utils/icon'
 import { IconType } from '@/types/icon-type'
@@ -23,6 +23,8 @@ import { Pin } from '@/types/pin'
 import { questionTitles } from '@/libs/constants'
 import { MePopup } from './mePopup'
 import { AllPopup } from './allPopup'
+import { MessageType } from '@/types/message-type'
+import { messageContext } from '@/contexts/message-context'
 
 // 環境変数の取得に失敗した場合は日本経緯度原点を設定
 const defaultLatitude =
@@ -128,6 +130,7 @@ const Map: React.FC<Props> = ({
   )
   const [error, setError] = useState<Error | null>(null)
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null)
+  const noticeMessageContext = useContext(messageContext)
 
   useEffect(() => {
     // geolocation が http に対応していないため固定値を設定
@@ -154,6 +157,17 @@ const Map: React.FC<Props> = ({
       (e) => {
         console.error(e)
         setError(e instanceof Error ? e : new Error(e.message))
+        if (e.code === e.PERMISSION_DENIED) {
+          noticeMessageContext.showMessage(
+            '位置情報の取得権限がありません、設定から位置情報機能をオンにしてください',
+            MessageType.Error
+          )
+        } else {
+          noticeMessageContext.showMessage(
+            '位置情報の取得に失敗しました、位置情報が無効になっている可能性があります',
+            MessageType.Error
+          )
+        }
         setCurrentPosition(null)
         setCenter(null)
       },
@@ -163,7 +177,7 @@ const Map: React.FC<Props> = ({
     return () => {
       navigator.geolocation.clearWatch(watchId)
     }
-  }, [])
+  }, [noticeMessageContext])
 
   const currentPositionIconHTML = renderToString(
     <CurrentPositionIcon style={{ fill: 'blue' }} />
