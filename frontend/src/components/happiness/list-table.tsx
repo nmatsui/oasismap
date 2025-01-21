@@ -16,6 +16,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  TableSortLabel,
 } from '@mui/material'
 import {
   CheckCircle,
@@ -28,6 +29,7 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import { Data } from '@/types/happiness-list-response'
 import { timestampToDateTime } from '@/libs/date-converter'
 import DeleteConfirmationDialog from '@/components/happiness/delete-confirmation-dialog'
+import SwapVertIcon from '@mui/icons-material/SwapVert'
 
 interface ListTableProps {
   listData: Data[]
@@ -158,6 +160,47 @@ const ListTable: React.FC<ListTableProps> = ({
   isLoaded,
 }) => {
   const [selectedData, setSelectedData] = useState<Data | null>(null)
+  const [order, setOrder] = useState<Order>('desc')
+  const [orderBy, setOrderBy] = useState<Key | null>(null)
+  const [iconView, setIconView] = useState<boolean>(true)
+  type Key =
+    | 'happiness1'
+    | 'happiness2'
+    | 'happiness3'
+    | 'happiness4'
+    | 'happiness5'
+    | 'happiness6'
+  function sortedRows(
+    order: Order,
+    orderBy: Key | null
+  ): (a: Data, b: Data) => number {
+    return order === 'asc'
+      ? (a, b) => descendinComparator(a, b, orderBy)
+      : (a, b) => -descendinComparator(a, b, orderBy)
+  }
+  type Order = 'asc' | 'desc'
+  function descendinComparator(a: Data, b: Data, orderBy: Key | null) {
+    if (orderBy !== null && b.answers[orderBy] < a.answers[orderBy]) {
+      return 1
+    }
+    if (orderBy !== null && b.answers[orderBy] > a.answers[orderBy]) {
+      return -1
+    }
+    return 0
+  }
+  const handleRequestSort = (property: Key) => {
+    if (order === 'asc') {
+      setOrder('desc')
+      setOrderBy(null)
+      setIconView(true)
+      return
+    }
+    const isAsc = orderBy === property && order === 'desc'
+    setOrder(isAsc ? 'asc' : 'desc')
+    setOrderBy(property)
+    setIconView(false)
+  }
+  const visibleRows = [...listData].sort(sortedRows(order, orderBy))
 
   const deleteRowData = () => {
     if (selectedData) {
@@ -190,12 +233,90 @@ const ListTable: React.FC<ListTableProps> = ({
             }}
           >
             <TableCell sx={{ pl: '8px', width: '28px' }} />
-            <TableCell>ワクワク</TableCell>
-            <TableCell>学び</TableCell>
-            <TableCell>ホッとする</TableCell>
-            <TableCell>自分を取り戻せる</TableCell>
-            <TableCell>自慢</TableCell>
-            <TableCell>思い出</TableCell>
+            <TableCell>
+              <TableSortLabel
+                onClick={() => handleRequestSort('happiness1')}
+                active={orderBy === 'happiness1' || iconView}
+                direction={order}
+                IconComponent={iconView === false ? undefined : SwapVertIcon}
+                sx={{
+                  flexFlow: { xs: 'column', sm: 'row' },
+                  mx: { xs: 0, sm: '4px' },
+                }}
+              >
+                ワクワク
+              </TableSortLabel>
+            </TableCell>
+            <TableCell>
+              <TableSortLabel
+                onClick={() => handleRequestSort('happiness2')}
+                active={orderBy === 'happiness2' || iconView}
+                direction={order}
+                IconComponent={iconView === false ? undefined : SwapVertIcon}
+                sx={{
+                  flexFlow: { xs: 'column', sm: 'row' },
+                  mx: { xs: 0, sm: '4px' },
+                }}
+              >
+                学び
+              </TableSortLabel>
+            </TableCell>
+            <TableCell>
+              <TableSortLabel
+                onClick={() => handleRequestSort('happiness3')}
+                active={orderBy === 'happiness3' || iconView}
+                direction={order}
+                IconComponent={iconView === false ? undefined : SwapVertIcon}
+                sx={{
+                  flexFlow: { xs: 'column', sm: 'row' },
+                  mx: { xs: 0, sm: '4px' },
+                }}
+              >
+                ホッとする
+              </TableSortLabel>
+            </TableCell>
+            <TableCell>
+              <TableSortLabel
+                onClick={() => handleRequestSort('happiness4')}
+                active={orderBy === 'happiness4' || iconView}
+                direction={order}
+                IconComponent={iconView === false ? undefined : SwapVertIcon}
+                sx={{
+                  flexFlow: { xs: 'column', sm: 'row' },
+                  mx: { xs: 0, sm: '4px' },
+                }}
+              >
+                自分を取り戻せる
+              </TableSortLabel>
+            </TableCell>
+            <TableCell>
+              <TableSortLabel
+                onClick={() => handleRequestSort('happiness5')}
+                active={orderBy === 'happiness5' || iconView}
+                direction={order}
+                IconComponent={iconView === false ? undefined : SwapVertIcon}
+                sx={{
+                  flexFlow: { xs: 'column', sm: 'row' },
+                  mx: { xs: 0, sm: '4px' },
+                }}
+              >
+                自慢
+              </TableSortLabel>
+            </TableCell>
+            <TableCell>
+              <TableSortLabel
+                onClick={() => handleRequestSort('happiness6')}
+                active={orderBy === 'happiness6' || iconView}
+                direction={order}
+                IconComponent={iconView === false ? undefined : SwapVertIcon}
+                sx={{
+                  flexFlow: { xs: 'column', sm: 'row' },
+                  mx: { xs: 0, sm: '4px' },
+                }}
+              >
+                思い出
+              </TableSortLabel>
+            </TableCell>
             <TableCell sx={{ width: '28px' }} />
           </TableRow>
         </TableHead>
@@ -207,7 +328,7 @@ const ListTable: React.FC<ListTableProps> = ({
               </TableCell>
             </TableRow>
           ) : (
-            listData.map((row) => (
+            visibleRows.map((row: any) => (
               <Row
                 key={row.id}
                 row={row}
