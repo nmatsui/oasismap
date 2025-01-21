@@ -1,4 +1,5 @@
 export interface Pin {
+  id: string
   type: string
   latitude: number
   longitude: number
@@ -11,4 +12,5 @@ export interface Pin {
   answer6: number
   basetime: string | undefined
   timestamp: string | undefined
+  memo: string | undefined
 }

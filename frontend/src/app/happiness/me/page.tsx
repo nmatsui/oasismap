@@ -43,7 +43,7 @@ const HappinessMe: React.FC = () => {
   const [MyHappiness, setMyHappiness] = useState<any>([])
   const { isTokenFetched } = useTokenFetchStatus()
   const searchParams = useSearchParams()
-  const selectedEntityId = searchParams.get('entityId')
+  const initialEntityId = searchParams.get('entityId')
   const timestamp = searchParams.get('timestamp')
   const { startProps, endProps, updatedPeriod } = useDateTimeProps(
     period,
@@ -113,7 +113,7 @@ const HappinessMe: React.FC = () => {
         })
 
         if (
-          selectedEntityId &&
+          initialEntityId &&
           timestamp &&
           Object.keys(entityByEntityId).length === 0
         ) {
@@ -205,7 +205,7 @@ const HappinessMe: React.FC = () => {
           fiware={{ servicePath: '', tenant: '' }}
           iconType="pin"
           pinData={pinData}
-          selectedEntityId={selectedEntityId}
+          initialEntityId={initialEntityId}
           entityByEntityId={entityByEntityId}
           onPopupClose={() =>
             // 画面遷移時に発火させないため、マウント時のみクエリパラメータの削除を実行
