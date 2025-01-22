@@ -4,7 +4,7 @@ import { questionTitles } from '@/libs/constants'
 import { graphColors } from '@/theme/color'
 import { Pin } from '@/types/pin'
 
-const YAXIS_WIDTH = 125
+export const YAXIS_WIDTH = 125
 export const AllPopup = ({
   pin,
   setSelectedPin,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { BarChart, XAxis, YAxis, Bar } from 'recharts'
+import { BarChart, XAxis, YAxis, Bar, CartesianGrid } from 'recharts'
 import Pagination from '@mui/material/Pagination'
 import { Modal, Box, Typography } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
@@ -441,7 +441,8 @@ export const OpenModal: React.FC<ModalProps> = ({ onClose, data }) => {
               width={300}
               height={200}
             >
-              <XAxis type="number" domain={[0, 100]} hide />
+              <CartesianGrid horizontal={false} />
+              <XAxis type="number" domain={[0, 100]} ticks={[0, 50, 100]} />
               <YAxis
                 type="category"
                 width={70}
