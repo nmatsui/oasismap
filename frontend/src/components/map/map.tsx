@@ -28,6 +28,7 @@ import { MessageType } from '@/types/message-type'
 import { HighlightTarget } from '@/types/highlight-target'
 import { HappinessKey } from '@/types/happiness-key'
 import { PeriodType } from '@/types/period'
+import { OpenModal } from '../happiness/modal'
 
 // 環境変数の取得に失敗した場合は日本経緯度原点を設定
 const defaultLatitude =
@@ -241,7 +242,7 @@ const MapOverlay = ({
               setSelectedPin={setSelectedPin}
             />
           ) : (
-            <AllPopup pin={pin} />
+            <AllPopup pin={pin} setSelectedPin={setSelectedPin} />
           )}
         </Marker>
       ))}
@@ -478,7 +479,11 @@ const Map: React.FC<Props> = ({
           />
         )}
       </MapContainer>
-      <DetailModal data={selectedPin} onClose={() => setSelectedPin(null)} />
+      {iconType === 'pin' ? (
+        <DetailModal data={selectedPin} onClose={() => setSelectedPin(null)} />
+      ) : (
+        <OpenModal data={selectedPin} onClose={() => setSelectedPin(null)} />
+      )}
     </>
   )
 }

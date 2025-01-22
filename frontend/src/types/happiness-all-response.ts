@@ -23,6 +23,8 @@ export interface MapDataItem {
     }
   }
   answers: HappinessFields
+  memos: string[]
+  totalmemos: string
 }
 
 type GraphData = {
