@@ -177,7 +177,8 @@ const Map: React.FC<Props> = ({
     return () => {
       navigator.geolocation.clearWatch(watchId)
     }
-  }, [noticeMessageContext])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const currentPositionIconHTML = renderToString(
     <CurrentPositionIcon style={{ fill: 'blue' }} />
