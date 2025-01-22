@@ -10,7 +10,6 @@ export function GetPin(arr: (Data | MapDataItem)[]): Pin[] {
       let timestamp
       let memo
       let memos
-      let totalmemos
       if ('timestamp' in data && data.timestamp) {
         const date = new Date(data.timestamp)
         const year = date.getFullYear()
@@ -22,13 +21,11 @@ export function GetPin(arr: (Data | MapDataItem)[]): Pin[] {
         timestamp = `${year}/${month}/${day} ${hours}:${minutes}`
         memo = data.memo
         memos = undefined
-        totalmemos = undefined
       } else {
         basetime = undefined
         timestamp = undefined
         memo = undefined
         memos = data.memos
-        totalmemos = data.totalmemos
       }
 
       const pin: Pin = {
@@ -46,7 +43,6 @@ export function GetPin(arr: (Data | MapDataItem)[]): Pin[] {
         basetime: basetime,
         memo: memo,
         memos: memos,
-        totalmemos: totalmemos,
         timestamp: timestamp,
       }
       return pin

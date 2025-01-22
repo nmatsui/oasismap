@@ -16,5 +16,4 @@ export interface Data {
   answers: HappinessFields
   memo: string
   memos: string[]
-  totalmemos: string
 }

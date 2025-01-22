@@ -3,8 +3,9 @@ import { Popup } from 'react-leaflet'
 import { questionTitles } from '@/libs/constants'
 import { graphColors } from '@/theme/color'
 import { Pin } from '@/types/pin'
+import { YAXIS_WIDTH } from '@/libs/constants'
+import { Box } from '@mui/material'
 
-export const YAXIS_WIDTH = 125
 export const AllPopup = ({
   pin,
   setSelectedPin,
@@ -107,17 +108,16 @@ export const AllPopup = ({
           }}
         />
       </BarChart>
-      {pin.totalmemos !== undefined && (
-        <div
+      {pin.memos !== undefined && (
+        <Box
           style={{
-            top: 5,
             marginLeft: '10%',
           }}
         >
-          <h4>
-            {pin.totalmemos.length > 10 ? (
+          <span>
+            {pin.memos.join('').length > 10 ? (
               <>
-                {pin.totalmemos.slice(0, 10)}…
+                {pin.memos.join('、').slice(0, 10)}…
                 <button
                   style={{
                     backgroundColor: 'transparent',
@@ -130,10 +130,10 @@ export const AllPopup = ({
                 </button>
               </>
             ) : (
-              pin.totalmemos
+              pin.memos
             )}
-          </h4>
-        </div>
+          </span>
+        </Box>
       )}
     </Popup>
   )

@@ -19,7 +19,7 @@ import { IconButton } from '@mui/material'
 import MyLocationIcon from '@mui/icons-material/MyLocation'
 import CurrentPositionIcon from '@mui/icons-material/RadioButtonChecked'
 import { renderToString } from 'react-dom/server'
-import { DetailModal } from '../happiness/detailModal'
+import { MeModal } from '../happiness/me-modal'
 import { Pin } from '@/types/pin'
 import { HAPPINESS_KEYS, questionTitles } from '@/libs/constants'
 import { MePopup } from './mePopup'
@@ -28,7 +28,7 @@ import { MessageType } from '@/types/message-type'
 import { HighlightTarget } from '@/types/highlight-target'
 import { HappinessKey } from '@/types/happiness-key'
 import { PeriodType } from '@/types/period'
-import { OpenModal } from '../happiness/modal'
+import { AllModal } from '../happiness/all-modal'
 
 // 環境変数の取得に失敗した場合は日本経緯度原点を設定
 const defaultLatitude =
@@ -480,9 +480,9 @@ const Map: React.FC<Props> = ({
         )}
       </MapContainer>
       {iconType === 'pin' ? (
-        <DetailModal data={selectedPin} onClose={() => setSelectedPin(null)} />
+        <MeModal data={selectedPin} onClose={() => setSelectedPin(null)} />
       ) : (
-        <OpenModal data={selectedPin} onClose={() => setSelectedPin(null)} />
+        <AllModal data={selectedPin} onClose={() => setSelectedPin(null)} />
       )}
     </>
   )

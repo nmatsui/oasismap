@@ -28,3 +28,5 @@ export const questionTitles: QuestionTitles = {
   happiness5: '自慢の場所',
   happiness6: '思い出の場所',
 }
+
+export const YAXIS_WIDTH = 125

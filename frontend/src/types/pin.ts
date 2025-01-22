@@ -16,5 +16,4 @@ export interface Pin {
   timestamp: string | undefined
   memo: string | undefined
   memos: string[] | undefined
-  totalmemos: string | undefined
 }
