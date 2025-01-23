@@ -4,13 +4,34 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  Cell,
 } from 'recharts'
 import { BarChart, Bar, Legend } from 'recharts'
 import { questionTitles } from '@/libs/constants'
+import { HappinessKey } from '@/types/happiness-key'
+import { HAPPINESS_KEYS } from '@/libs/constants'
 
 const BarGraph = (props: any) => {
-  const { title, plotdata, color, xTickFormatter, isLoaded } = props
+  const {
+    title,
+    plotdata,
+    color,
+    xTickFormatter,
+    highlightTarget,
+    setHighlightTarget,
+    isLoaded,
+  } = props
   const isEmptyData = !plotdata || plotdata.length === 0
+
+  const handleClick = (data: any) => {
+    const barXAxisValue = Number(data.timestamp)
+    if (highlightTarget.xAxisValue === barXAxisValue) {
+      setHighlightTarget({ lastUpdateBy: 'Graph', xAxisValue: null })
+    } else {
+      setHighlightTarget({ lastUpdateBy: 'Graph', xAxisValue: barXAxisValue })
+    }
+  }
+
   return (
     <>
       <h3 className="text-white text-center">{title}</h3>
@@ -44,42 +65,32 @@ const BarGraph = (props: any) => {
             <YAxis />
             <Tooltip />
             <Legend verticalAlign="bottom" />
-            <Bar
-              dataKey="happiness1"
-              stackId={1}
-              fill={color[0]}
-              name={questionTitles.happiness1}
-            />
-            <Bar
-              dataKey="happiness2"
-              stackId={1}
-              fill={color[1]}
-              name={questionTitles.happiness2}
-            />
-            <Bar
-              dataKey="happiness3"
-              stackId={1}
-              fill={color[2]}
-              name={questionTitles.happiness3}
-            />
-            <Bar
-              dataKey="happiness4"
-              stackId={1}
-              fill={color[3]}
-              name={questionTitles.happiness4}
-            />
-            <Bar
-              dataKey="happiness5"
-              stackId={1}
-              fill={color[4]}
-              name={questionTitles.happiness5}
-            />
-            <Bar
-              dataKey="happiness6"
-              stackId={1}
-              fill={color[5]}
-              name={questionTitles.happiness6}
-            />
+            {HAPPINESS_KEYS.map((dataKey: HappinessKey, i: number) => {
+              return (
+                <Bar
+                  key={dataKey}
+                  dataKey={dataKey}
+                  stackId={1}
+                  fill={color[i]}
+                  name={questionTitles[dataKey]}
+                  onClick={handleClick}
+                >
+                  {plotdata !== undefined &&
+                    plotdata.map((data: any, index: number) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={
+                          // xAxisValueがnullの場合、全体のハイライトは解除されているのでカラーで表示
+                          !highlightTarget.xAxisValue ||
+                          Number(data.timestamp) === highlightTarget.xAxisValue
+                            ? color[i]
+                            : 'grey'
+                        }
+                      />
+                    ))}
+                </Bar>
+              )
+            })}
           </BarChart>
         )}
       </ResponsiveContainer>

@@ -26,6 +26,7 @@ import { MePopup } from './mePopup'
 import { AllPopup } from './allPopup'
 import { MessageType } from '@/types/message-type'
 import { messageContext } from '@/contexts/message-context'
+import { PeriodType } from '@/types/period'
 
 // 環境変数の取得に失敗した場合は日本経緯度原点を設定
 const defaultLatitude =
@@ -64,11 +65,34 @@ type Props = {
   setBounds?: React.Dispatch<React.SetStateAction<LatLngBounds | undefined>>
   entityByEntityId?: EntityByEntityId
   onPopupClose?: () => void
+  highlightTarget?: { lastUpdateBy: string; xAxisValue: number | null }
+  setHighlightTarget?: React.Dispatch<
+    React.SetStateAction<{ lastUpdateBy: string; xAxisValue: number | null }>
+  >
+  period?: PeriodType
 }
 
-const ClosePopup = () => {
+const HighlightListener = ({
+  highlightTarget,
+  setHighlightTarget,
+}: {
+  highlightTarget: { lastUpdateBy: string; xAxisValue: number | null }
+  setHighlightTarget: React.Dispatch<
+    React.SetStateAction<{ lastUpdateBy: string; xAxisValue: number | null }>
+  >
+}) => {
+  // グラフクリックによってハイライト状態が変更された場合はポップアップを閉じる
   const map = useMap()
-  map.closePopup()
+  if (highlightTarget && highlightTarget.lastUpdateBy === 'Graph') {
+    map.closePopup()
+  }
+
+  // マップ上のpin以外の箇所をクリックした場合、全体のハイライトを解除
+  useMapEvents({
+    click() {
+      setHighlightTarget({ lastUpdateBy: 'Map', xAxisValue: null })
+    },
+  })
   return null
 }
 
@@ -81,6 +105,84 @@ const OnPopupClose = ({ onPopupClose }: { onPopupClose: () => void }) => {
   return null
 }
 
+const getActive = (
+  timestamp: Date,
+  activeTimestamp: { start: Date; end: Date } | null
+) => {
+  if (!timestamp || !activeTimestamp) return true
+  return activeTimestamp.start <= timestamp && timestamp <= activeTimestamp.end
+}
+
+const convertToXAxisValue = (pin: Pin, period: PeriodType): number | null => {
+  if (!pin || !pin.timestamp) return null
+
+  // 現在からdays日前 よりも 指定したdate が未来にあれば true
+  function isWithinDays(date: Date, days: number): boolean {
+    return new Date(Date.now() - days * 24 * 60 * 60 * 1000) < date
+  }
+
+  // グラフの範囲外を初期値とする
+  let xAxisValue: number = -1
+  const date = new Date(pin.timestamp)
+  if (period === PeriodType.Month && isWithinDays(date, 365)) {
+    xAxisValue = date.getMonth() + 1
+  }
+
+  if (period === PeriodType.Day && isWithinDays(date, 30)) {
+    xAxisValue = date.getDate()
+  }
+
+  if (period === PeriodType.Time && isWithinDays(date, 1)) {
+    xAxisValue = date.getHours()
+  }
+
+  return xAxisValue
+}
+
+const convertToTimestampRange = (
+  xAxisValue: number | null,
+  period: PeriodType
+) => {
+  if (xAxisValue === null) return null
+  const date = new Date()
+  let nowYear = date.getFullYear()
+  let nowMonthIndex = date.getMonth()
+  let nowMonth = nowMonthIndex + 1
+  let nowDate = date.getDate()
+  const nowHour = date.getHours()
+
+  if (xAxisValue < 0) {
+    // ハイライト対象がグラフ外の値の場合、タイムスタンプをあり得ない値(未来)に設定する
+    nowYear += 100
+  }
+
+  switch (period) {
+    case PeriodType.Month:
+      // 現在の月数よりも大きい値の月数が指定された場合、指定された月は去年である
+      if (nowMonth < xAxisValue) nowYear -= 1
+      return {
+        start: new Date(nowYear, xAxisValue - 1, 1),
+        end: new Date(nowYear, xAxisValue, 0, 23, 59, 59),
+      }
+
+    case PeriodType.Day:
+      // 現在の日数よりも大きい値の日数が指定された場合、指定された日にちは先月である
+      if (nowDate < xAxisValue) nowMonthIndex -= 1
+      return {
+        start: new Date(nowYear, nowMonthIndex, xAxisValue, 0, 0, 0),
+        end: new Date(nowYear, nowMonthIndex, xAxisValue, 23, 59, 59),
+      }
+
+    case PeriodType.Time:
+      // 現在の時間よりも大きい値の時間が指定された場合、指定された時間は昨日である
+      if (nowHour < xAxisValue) nowDate -= 1
+      return {
+        start: new Date(nowYear, nowMonthIndex, nowDate, xAxisValue, 0, 0),
+        end: new Date(nowYear, nowMonthIndex, nowDate, xAxisValue, 59, 59),
+      }
+  }
+}
+
 const MapOverlay = ({
   iconType,
   type,
@@ -88,6 +190,9 @@ const MapOverlay = ({
   initialPopupPin,
   layerIndex,
   setSelectedPin,
+  setHighlightTarget,
+  period,
+  activeTimestamp,
 }: {
   iconType: IconType
   type: string
@@ -95,6 +200,11 @@ const MapOverlay = ({
   initialPopupPin: Pin | undefined
   layerIndex: number
   setSelectedPin: React.Dispatch<React.SetStateAction<Pin | null>>
+  setHighlightTarget?: React.Dispatch<
+    React.SetStateAction<{ lastUpdateBy: string; xAxisValue: number | null }>
+  >
+  period?: PeriodType
+  activeTimestamp: { start: Date; end: Date } | null
 }) => (
   <LayersControl.Overlay checked name={type}>
     <LayerGroup>
@@ -102,8 +212,28 @@ const MapOverlay = ({
         <Marker
           key={index}
           position={[pin.latitude, pin.longitude]}
-          icon={getIconByType(iconType, pin.type, pin.answer)}
+          icon={getIconByType(
+            iconType,
+            pin.type,
+            pin.answer,
+            getActive(new Date(pin.timestamp), activeTimestamp)
+          )}
           zIndexOffset={-layerIndex}
+          eventHandlers={{
+            click: () => {
+              if (!setHighlightTarget || !period) return
+              setHighlightTarget((highlightTarget) => {
+                const newXAxisValue = convertToXAxisValue(pin, period)
+                // ハイライト中のピンをクリックした場合は何もしない。
+                // => 全体のハイライト解除はグラフクリックによって行う。
+                if (highlightTarget.xAxisValue === newXAxisValue) {
+                  return highlightTarget
+                } else {
+                  return { lastUpdateBy: 'Map', xAxisValue: newXAxisValue }
+                }
+              })
+            },
+          }}
         >
           {iconType === 'pin' ? (
             <MePopup
@@ -173,6 +303,9 @@ const Bounds = ({
 const Map: React.FC<Props> = ({
   iconType,
   pinData,
+  highlightTarget,
+  setHighlightTarget,
+  period,
   initialEntityId,
   setSelectedLayers,
   setBounds,
@@ -287,53 +420,66 @@ const Map: React.FC<Props> = ({
     initialEntityUuid = entityByEntityId?.[initialEntityId]?.id
   }
 
+  const activeTimestamp: { start: Date; end: Date } | null =
+    highlightTarget && period
+      ? convertToTimestampRange(highlightTarget.xAxisValue, period)
+      : null
+
   return (
     <>
-      <MapContainer
-        center={currentPosition}
-        zoom={defaultZoom}
-        scrollWheelZoom={true}
-        zoomControl={false}
-        maxBounds={maxBounds}
-        maxBoundsViscosity={maxBoundsViscosity}
-      >
-        {setSelectedLayers && (
-          <SelectedLayers setSelectedLayers={setSelectedLayers} />
-        )}
-        {setBounds && <Bounds setBounds={setBounds} />}
-        <MoveToCurrentPositionButton />
-        <ZoomControl position={'bottomleft'} />
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={18}
-          minZoom={5}
+    <MapContainer
+      center={currentPosition}
+      zoom={defaultZoom}
+      scrollWheelZoom={true}
+      zoomControl={false}
+      maxBounds={maxBounds}
+      maxBoundsViscosity={maxBoundsViscosity}
+    >
+      {setSelectedLayers && (
+        <SelectedLayers setSelectedLayers={setSelectedLayers} />
+      )}
+      {setBounds && <Bounds setBounds={setBounds} />}
+      <MoveToCurrentPositionButton />
+      <ZoomControl position={'bottomleft'} />
+      <TileLayer
+        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        maxZoom={18}
+        minZoom={5}
+      />
+      <LayersControl position="topright">
+        {HAPPINESS_KEYS.map((type, index) => {
+          const filteredPins = filteredPinsByType(type)
+          return (
+            <MapOverlay
+              key={type}
+              iconType={iconType}
+              type={questionTitles[type]}
+              layerIndex={index}
+              filteredPins={filteredPins}
+              initialPopupPin={filteredPins.find(
+                (pin) => pin.id === initialEntityUuid
+              )}
+              setSelectedPin={setSelectedPin}
+              setHighlightTarget={setHighlightTarget}
+              period={period}
+              activeTimestamp={activeTimestamp}
+            />
+          )
+        })}
+      </LayersControl>
+      {onPopupClose && <OnPopupClose onPopupClose={onPopupClose} />}
+      {currentPosition && (
+        <Marker position={currentPosition} icon={currentPositionIcon}></Marker>
+      )}
+      {highlightTarget && setHighlightTarget && (
+        <HighlightListener
+          highlightTarget={highlightTarget}
+          setHighlightTarget={setHighlightTarget}
         />
-        <LayersControl position="topright">
-          {HAPPINESS_KEYS.map((type, index) => {
-            const filteredPins = filteredPinsByType(type)
-            return (
-              <MapOverlay
-                key={type}
-                iconType={iconType}
-                type={questionTitles[type]}
-                layerIndex={index}
-                filteredPins={filteredPins}
-                initialPopupPin={filteredPins.find(
-                  (pin) => pin.id === initialEntityUuid
-                )}
-                setSelectedPin={setSelectedPin}
-              />
-            )
-          })}
-        </LayersControl>
-        {!selectedPin && !initialEntityId && <ClosePopup />}
-        {onPopupClose && <OnPopupClose onPopupClose={onPopupClose} />}
-        {currentPosition && (
-          <Marker position={currentPosition} icon={currentPositionIcon}></Marker>
-        )}
-      </MapContainer>
-      <DetailModal data={selectedPin} onClose={() => setSelectedPin(null)} />
+      )}
+    </MapContainer>
+    <DetailModal data={selectedPin} onClose={() => setSelectedPin(null)} />
     </>
   )
 }

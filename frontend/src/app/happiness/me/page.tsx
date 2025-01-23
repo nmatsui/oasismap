@@ -54,6 +54,11 @@ const HappinessMe: React.FC = () => {
   const { fetchData } = useFetchData()
   const [isLoaded, setIsLoaded] = useState(false)
 
+  const [highlightTarget, setHighlightTarget] = useState<{
+    lastUpdateBy: string
+    xAxisValue: number | null
+  }>({ lastUpdateBy: 'init', xAxisValue: null })
+
   const getData = async () => {
     try {
       setIsLoading(true)
@@ -61,6 +66,7 @@ const HappinessMe: React.FC = () => {
       setPinData([])
       setMyHappiness([])
       setEntityByEntityId({})
+      setHighlightTarget({ lastUpdateBy: 'init', xAxisValue: null })
 
       const url = backendUrl + '/api/happiness/me'
       const startDateTime = toDateTime(startProps.value).toISO()
@@ -211,6 +217,9 @@ const HappinessMe: React.FC = () => {
             // 画面遷移時に発火させないため、マウント時のみクエリパラメータの削除を実行
             isMounted.current && router.replace('/happiness/me')
           }
+          period={period}
+          highlightTarget={highlightTarget}
+          setHighlightTarget={setHighlightTarget}
         />
       </Grid>
       <Grid
@@ -238,6 +247,8 @@ const HappinessMe: React.FC = () => {
               color={graphColors}
               xTickFormatter={renderCustomDayTick}
               isLoaded={isLoaded}
+              highlightTarget={highlightTarget}
+              setHighlightTarget={setHighlightTarget}
             />
           </ResponsiveContainer>
         </Grid>
