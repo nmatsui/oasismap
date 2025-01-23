@@ -29,4 +29,4 @@ export const questionTitles: QuestionTitles = {
   happiness6: '思い出の場所',
 }
 
-export const YAXIS_WIDTH = 125
+export const HAPPINESS_ALL_BAR_GRAPH_YAXIS_WIDTH = 125
