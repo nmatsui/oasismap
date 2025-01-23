@@ -26,10 +26,18 @@ import {
 } from '@mui/icons-material'
 import LayersIcon from '@mui/icons-material/Layers'
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
+import SwapVertIcon from '@mui/icons-material/SwapVert'
 import { Data } from '@/types/happiness-list-response'
 import { timestampToDateTime } from '@/libs/date-converter'
 import DeleteConfirmationDialog from '@/components/happiness/delete-confirmation-dialog'
-import SwapVertIcon from '@mui/icons-material/SwapVert'
+import { HappinessKey } from '@/types/happiness-key'
+
+type Order = 'asc' | 'desc'
+
+type TableCellCategories = {
+  title: string
+  key: HappinessKey
+}
 
 interface ListTableProps {
   listData: Data[]
@@ -41,6 +49,15 @@ interface RowProps {
   row: Data
   openDialog: (row: Data) => void
 }
+
+const tableCellCategories: TableCellCategories[] = [
+  { title: 'ワクワク', key: 'happiness1' },
+  { title: '学び', key: 'happiness2' },
+  { title: 'ホッとする', key: 'happiness3' },
+  { title: '自分を取り戻せる', key: 'happiness4' },
+  { title: '自慢', key: 'happiness5' },
+  { title: '思い出', key: 'happiness6' },
+]
 
 const Row: React.FC<RowProps> = ({ row, openDialog }) => {
   const [isCollapseOpen, setIsCollapseOpen] = useState(false)
@@ -154,65 +171,56 @@ const Row: React.FC<RowProps> = ({ row, openDialog }) => {
   )
 }
 
+function Comparator(
+  order: Order,
+  orderBy: HappinessKey
+): (a: Data, b: Data) => number {
+  return order === 'asc'
+    ? (a, b) => ascending(a, b, orderBy)
+    : (a, b) => -ascending(a, b, orderBy)
+}
+function ascending(a: Data, b: Data, orderBy: HappinessKey) {
+  if (b.answers[orderBy] < a.answers[orderBy]) {
+    return 1
+  } else {
+    return -1
+  }
+}
+
 const ListTable: React.FC<ListTableProps> = ({
   listData,
   deleteListData,
   isLoaded,
 }) => {
   const [selectedData, setSelectedData] = useState<Data | null>(null)
-  const [order, setOrder] = useState<Order>('desc')
-  const [orderBy, setOrderBy] = useState<Key | null>(null)
-  const [iconView, setIconView] = useState<boolean>(true)
-  interface TableCellCategories {
-    title: string
-    key: Key
-  }
-  const tableCellCategories: TableCellCategories[] = [
-    { title: 'ワクワク', key: 'happiness1' },
-    { title: '学び', key: 'happiness2' },
-    { title: 'ホッとする', key: 'happiness3' },
-    { title: '自分を取り戻せる', key: 'happiness4' },
-    { title: '自慢', key: 'happiness5' },
-    { title: '思い出', key: 'happiness6' },
-  ]
-  type Key =
-    | 'happiness1'
-    | 'happiness2'
-    | 'happiness3'
-    | 'happiness4'
-    | 'happiness5'
-    | 'happiness6'
-  function sortedRows(
-    order: Order,
-    orderBy: Key | null
-  ): (a: Data, b: Data) => number {
-    return order === 'asc'
-      ? (a, b) => descendinComparator(a, b, orderBy)
-      : (a, b) => -descendinComparator(a, b, orderBy)
-  }
-  type Order = 'asc' | 'desc'
-  function descendinComparator(a: Data, b: Data, orderBy: Key | null) {
-    if (orderBy !== null && b.answers[orderBy] < a.answers[orderBy]) {
-      return 1
-    }
-    if (orderBy !== null && b.answers[orderBy] > a.answers[orderBy]) {
-      return -1
-    }
-    return 0
-  }
-  const handleRequestSort = (property: Key) => {
-    if (order === 'asc') {
+  const [order, setOrder] = useState<Order | undefined>(undefined)
+  const [orderBy, setOrderBy] = useState<HappinessKey | null>(null)
+
+  const handleSort = (property: HappinessKey) => {
+    if (orderBy === property) {
+      if (order === undefined) {
+        setOrder('desc')
+        return
+      }
+      if (order === 'desc') {
+        setOrder('asc')
+        return
+      }
+      if (order === 'asc') {
+        setOrder(undefined)
+        setOrderBy(null)
+        return
+      }
+    } else {
       setOrder('desc')
-      setOrderBy(null)
-      setIconView(true)
+      setOrderBy(property)
       return
     }
-    const isAsc = orderBy === property && order === 'desc'
-    setOrder(isAsc ? 'asc' : 'desc')
-    setOrderBy(property)
-    setIconView(false)
   }
-  const visibleRows = [...listData].sort(sortedRows(order, orderBy))
+  const sortListData =
+    order === undefined || orderBy === null
+      ? [...listData]
+      : [...listData].sort(Comparator(order, orderBy))
 
   const deleteRowData = () => {
     if (selectedData) {
@@ -248,10 +256,10 @@ const ListTable: React.FC<ListTableProps> = ({
             {tableCellCategories.map(({ title, key }) => (
               <TableCell key={key}>
                 <TableSortLabel
-                  onClick={() => handleRequestSort(key)}
-                  active={orderBy === key || iconView}
-                  direction={order}
-                  IconComponent={iconView === false ? undefined : SwapVertIcon}
+                  onClick={() => handleSort(key)}
+                  active={orderBy === key || orderBy === null}
+                  direction={orderBy === key ? order : 'desc'}
+                  IconComponent={orderBy !== null ? undefined : SwapVertIcon}
                   sx={{
                     flexFlow: { xs: 'column', sm: 'row' },
                     mx: { xs: 0, sm: '4px' },
@@ -272,7 +280,7 @@ const ListTable: React.FC<ListTableProps> = ({
               </TableCell>
             </TableRow>
           ) : (
-            visibleRows.map((row: any) => (
+            sortListData.map((row: any) => (
               <Row
                 key={row.id}
                 row={row}
