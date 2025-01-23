@@ -163,6 +163,18 @@ const ListTable: React.FC<ListTableProps> = ({
   const [order, setOrder] = useState<Order>('desc')
   const [orderBy, setOrderBy] = useState<Key | null>(null)
   const [iconView, setIconView] = useState<boolean>(true)
+  interface TableCellCategories {
+    title: string
+    key: Key
+  }
+  const tableCellCategories: TableCellCategories[] = [
+    { title: 'ワクワク', key: 'happiness1' },
+    { title: '学び', key: 'happiness2' },
+    { title: 'ホッとする', key: 'happiness3' },
+    { title: '自分を取り戻せる', key: 'happiness4' },
+    { title: '自慢', key: 'happiness5' },
+    { title: '思い出', key: 'happiness6' },
+  ]
   type Key =
     | 'happiness1'
     | 'happiness2'
@@ -233,90 +245,22 @@ const ListTable: React.FC<ListTableProps> = ({
             }}
           >
             <TableCell sx={{ pl: '8px', width: '28px' }} />
-            <TableCell>
-              <TableSortLabel
-                onClick={() => handleRequestSort('happiness1')}
-                active={orderBy === 'happiness1' || iconView}
-                direction={order}
-                IconComponent={iconView === false ? undefined : SwapVertIcon}
-                sx={{
-                  flexFlow: { xs: 'column', sm: 'row' },
-                  mx: { xs: 0, sm: '4px' },
-                }}
-              >
-                ワクワク
-              </TableSortLabel>
-            </TableCell>
-            <TableCell>
-              <TableSortLabel
-                onClick={() => handleRequestSort('happiness2')}
-                active={orderBy === 'happiness2' || iconView}
-                direction={order}
-                IconComponent={iconView === false ? undefined : SwapVertIcon}
-                sx={{
-                  flexFlow: { xs: 'column', sm: 'row' },
-                  mx: { xs: 0, sm: '4px' },
-                }}
-              >
-                学び
-              </TableSortLabel>
-            </TableCell>
-            <TableCell>
-              <TableSortLabel
-                onClick={() => handleRequestSort('happiness3')}
-                active={orderBy === 'happiness3' || iconView}
-                direction={order}
-                IconComponent={iconView === false ? undefined : SwapVertIcon}
-                sx={{
-                  flexFlow: { xs: 'column', sm: 'row' },
-                  mx: { xs: 0, sm: '4px' },
-                }}
-              >
-                ホッとする
-              </TableSortLabel>
-            </TableCell>
-            <TableCell>
-              <TableSortLabel
-                onClick={() => handleRequestSort('happiness4')}
-                active={orderBy === 'happiness4' || iconView}
-                direction={order}
-                IconComponent={iconView === false ? undefined : SwapVertIcon}
-                sx={{
-                  flexFlow: { xs: 'column', sm: 'row' },
-                  mx: { xs: 0, sm: '4px' },
-                }}
-              >
-                自分を取り戻せる
-              </TableSortLabel>
-            </TableCell>
-            <TableCell>
-              <TableSortLabel
-                onClick={() => handleRequestSort('happiness5')}
-                active={orderBy === 'happiness5' || iconView}
-                direction={order}
-                IconComponent={iconView === false ? undefined : SwapVertIcon}
-                sx={{
-                  flexFlow: { xs: 'column', sm: 'row' },
-                  mx: { xs: 0, sm: '4px' },
-                }}
-              >
-                自慢
-              </TableSortLabel>
-            </TableCell>
-            <TableCell>
-              <TableSortLabel
-                onClick={() => handleRequestSort('happiness6')}
-                active={orderBy === 'happiness6' || iconView}
-                direction={order}
-                IconComponent={iconView === false ? undefined : SwapVertIcon}
-                sx={{
-                  flexFlow: { xs: 'column', sm: 'row' },
-                  mx: { xs: 0, sm: '4px' },
-                }}
-              >
-                思い出
-              </TableSortLabel>
-            </TableCell>
+            {tableCellCategories.map(({ title, key }) => (
+              <TableCell key={key}>
+                <TableSortLabel
+                  onClick={() => handleRequestSort(key)}
+                  active={orderBy === key || iconView}
+                  direction={order}
+                  IconComponent={iconView === false ? undefined : SwapVertIcon}
+                  sx={{
+                    flexFlow: { xs: 'column', sm: 'row' },
+                    mx: { xs: 0, sm: '4px' },
+                  }}
+                >
+                  {title}
+                </TableSortLabel>
+              </TableCell>
+            ))}
             <TableCell sx={{ width: '28px' }} />
           </TableRow>
         </TableHead>
