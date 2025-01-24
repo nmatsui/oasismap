@@ -9,7 +9,7 @@ import {
   useMapEvents,
 } from 'react-leaflet'
 import React, { useState, useEffect, useContext } from 'react'
-import { LatLngTuple, LatLngBounds, divIcon } from 'leaflet'
+import { LatLng, LatLngTuple, LatLngBounds, divIcon } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getIconByType } from '../utils/icon'
 import { HappinessKey } from '@/types/happiness-key'
@@ -184,6 +184,8 @@ const Map: React.FC<Props> = ({
   const [error, setError] = useState<Error | null>(null)
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null)
   const noticeMessageContext = useContext(messageContext)
+  const maxBounds = new LatLngBounds(new LatLng(-90, -180), new LatLng(90, 180))
+  const maxBoundsViscosity = 1.0
 
   useEffect(() => {
     // geolocation が http に対応していないため固定値を設定
@@ -292,6 +294,8 @@ const Map: React.FC<Props> = ({
         zoom={defaultZoom}
         scrollWheelZoom={true}
         zoomControl={false}
+        maxBounds={maxBounds}
+        maxBoundsViscosity={maxBoundsViscosity}
       >
         {setSelectedLayers && (
           <SelectedLayers setSelectedLayers={setSelectedLayers} />
