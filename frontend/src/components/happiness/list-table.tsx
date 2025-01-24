@@ -241,7 +241,7 @@ const ListTable: React.FC<ListTableProps> = ({
     >
       <Table
         stickyHeader
-        sx={{ px: '16px', tableLayout: 'fixed', width: '100%' }}
+        sx={{ px: '8px 4px', tableLayout: 'fixed', width: '100%' }}
       >
         <TableHead>
           <TableRow
@@ -255,7 +255,12 @@ const ListTable: React.FC<ListTableProps> = ({
           >
             <TableCell sx={{ pl: '8px', width: '28px' }} />
             {tableCellCategories.map(({ title, key }) => (
-              <TableCell key={key}>
+              <TableCell
+                key={key}
+                sx={{
+                  padding: '16px 4px',
+                }}
+              >
                 <TableSortLabel
                   onClick={() => handleSort(key)}
                   active={orderBy === key || orderBy === null}
@@ -264,6 +269,9 @@ const ListTable: React.FC<ListTableProps> = ({
                   sx={{
                     flexFlow: { xs: 'column', sm: 'row' },
                     mx: { xs: 0, sm: '4px' },
+                    '& .MuiTableSortLabel-icon': {
+                      paddingTop: '5px',
+                    },
                   }}
                 >
                   {title}
