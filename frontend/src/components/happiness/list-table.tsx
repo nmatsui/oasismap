@@ -171,15 +171,15 @@ const Row: React.FC<RowProps> = ({ row, openDialog }) => {
   )
 }
 
-function Comparator(
+function getComparator(
   order: Order,
   orderBy: HappinessKey
 ): (a: Data, b: Data) => number {
   return order === 'asc'
-    ? (a, b) => ascending(a, b, orderBy)
-    : (a, b) => -ascending(a, b, orderBy)
+    ? (a, b) => ascendingComparator(a, b, orderBy)
+    : (a, b) => -ascendingComparator(a, b, orderBy)
 }
-function ascending(a: Data, b: Data, orderBy: HappinessKey) {
+function ascendingComparator(a: Data, b: Data, orderBy: HappinessKey) {
   if (b.answers[orderBy] < a.answers[orderBy]) {
     return 1
   } else {
@@ -220,7 +220,7 @@ const ListTable: React.FC<ListTableProps> = ({
   const sortedListData =
     order === undefined || orderBy === null
       ? [...listData]
-      : [...listData].sort(Comparator(order, orderBy))
+      : [...listData].sort(getComparator(order, orderBy))
 
   const deleteRowData = () => {
     if (selectedData) {
