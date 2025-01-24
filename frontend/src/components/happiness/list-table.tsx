@@ -217,7 +217,7 @@ const ListTable: React.FC<ListTableProps> = ({
       return
     }
   }
-  const sortListData =
+  const sortedListData =
     order === undefined || orderBy === null
       ? [...listData]
       : [...listData].sort(Comparator(order, orderBy))
@@ -280,7 +280,7 @@ const ListTable: React.FC<ListTableProps> = ({
               </TableCell>
             </TableRow>
           ) : (
-            sortListData.map((row: any) => (
+            sortedListData.map((row: any) => (
               <Row
                 key={row.id}
                 row={row}
