@@ -159,12 +159,12 @@ const Map: React.FC<Props> = ({
         setError(e instanceof Error ? e : new Error(e.message))
         if (e.code === e.PERMISSION_DENIED) {
           noticeMessageContext.showMessage(
-            '位置情報の取得権限がありません、設定から位置情報機能をオンにしてください',
+            '位置情報機能が無効になっている可能性があります。設定から位置情報機能を有効にしてください。',
             MessageType.Error
           )
         } else {
           noticeMessageContext.showMessage(
-            '位置情報の取得に失敗しました、位置情報が無効になっている可能性があります',
+            '位置情報の取得に失敗しました。',
             MessageType.Error
           )
         }
