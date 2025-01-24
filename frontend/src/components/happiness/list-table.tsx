@@ -59,6 +59,23 @@ const tableCellCategories: TableCellCategories[] = [
   { title: '思い出', key: 'happiness6' },
 ]
 
+function getComparator(
+  order: Order,
+  orderBy: HappinessKey
+): (a: Data, b: Data) => number {
+  return order === 'asc'
+    ? (a, b) => ascendingComparator(a, b, orderBy)
+    : (a, b) => -ascendingComparator(a, b, orderBy)
+}
+
+function ascendingComparator(a: Data, b: Data, orderBy: HappinessKey) {
+  if (b.answers[orderBy] < a.answers[orderBy]) {
+    return 1
+  } else {
+    return -1
+  }
+}
+
 const Row: React.FC<RowProps> = ({ row, openDialog }) => {
   const [isCollapseOpen, setIsCollapseOpen] = useState(false)
   const [anchorElement, setAnchorElement] = React.useState<null | HTMLElement>(
@@ -169,22 +186,6 @@ const Row: React.FC<RowProps> = ({ row, openDialog }) => {
       </Menu>
     </>
   )
-}
-
-function getComparator(
-  order: Order,
-  orderBy: HappinessKey
-): (a: Data, b: Data) => number {
-  return order === 'asc'
-    ? (a, b) => ascendingComparator(a, b, orderBy)
-    : (a, b) => -ascendingComparator(a, b, orderBy)
-}
-function ascendingComparator(a: Data, b: Data, orderBy: HappinessKey) {
-  if (b.answers[orderBy] < a.answers[orderBy]) {
-    return 1
-  } else {
-    return -1
-  }
 }
 
 const ListTable: React.FC<ListTableProps> = ({
