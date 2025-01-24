@@ -7,7 +7,7 @@ import { graphColors } from '@/theme/color'
 import { Pin } from '@/types/pin'
 
 export const HappinessAllGraph = ({ data }: { data: Pin }) => {
-  let barChartData: { questionTitle: string; value: number }[] = [
+  const barChartData: { questionTitle: string; value: number }[] = [
     {
       questionTitle: questionTitles.happiness1,
       value: Math.ceil(data.answer1 * 100),

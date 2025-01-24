@@ -419,7 +419,6 @@ const Map: React.FC<Props> = ({
   if (initialEntityId) {
     initialEntityUuid = entityByEntityId?.[initialEntityId]?.id
   }
-  console.log(pinData)
 
   const activeTimestamp: { start: Date; end: Date } | null =
     highlightTarget && period

@@ -51,6 +51,7 @@ export const AllModal: React.FC<ModalProps> = ({ onClose, data }) => {
             <p style={{ marginTop: '10px', fontSize: '20px' }}>メモ一覧</p>
             <div style={{ marginTop: '10px', height: '144px' }}>
               {data.memos
+                .filter(Boolean)
                 .slice(
                   (currentPage - 1) * MEMOS_PER_PAGE,
                   currentPage * MEMOS_PER_PAGE
