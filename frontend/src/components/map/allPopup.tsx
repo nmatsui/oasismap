@@ -13,15 +13,18 @@ export const AllPopup = ({
   if (pin.memos === undefined) {
     return
   }
-  const joinedMemos = pin.memos.filter(Boolean).join(',')
+  const memoArray: any = []
+  {
+    pin.memos.map((title) => memoArray.push(title.memo))
+  }
   return (
     <Popup>
       <HappinessAllGraph data={pin} />
       {pin.memos !== undefined && (
         <Box sx={{ fontWeight: 'bolder' }}>
-          {pin.memos.filter(Boolean).join('').length > 10 ? (
+          {memoArray.filter(Boolean).join('').length > 15 ? (
             <>
-              {joinedMemos.slice(0, 15)}…
+              {memoArray.filter(Boolean).join(',').slice(0, 15)}…
               <button
                 style={{
                   backgroundColor: 'transparent',
@@ -34,7 +37,7 @@ export const AllPopup = ({
               </button>
             </>
           ) : (
-            joinedMemos
+            memoArray
           )}
         </Box>
       )}

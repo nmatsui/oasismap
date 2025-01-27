@@ -15,5 +15,5 @@ export interface Pin {
   basetime: string | undefined
   timestamp: string | undefined
   memo: string | undefined
-  memos: string[] | undefined
+  memos: { timestamp: string; memo: string }[] | undefined
 }

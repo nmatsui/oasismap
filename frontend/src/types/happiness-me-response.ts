@@ -15,5 +15,5 @@ export interface Data {
   timestamp: string
   answers: HappinessFields
   memo: string
-  memos: string[]
+  memos: [{ timestamp: string; memo: string }]
 }

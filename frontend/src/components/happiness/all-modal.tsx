@@ -9,7 +9,7 @@ interface ModalProps {
   onClose: () => void
 }
 
-const MEMOS_PER_PAGE = 5
+const MEMOS_PER_PAGE = 4
 
 export const AllModal: React.FC<ModalProps> = ({ onClose, data }) => {
   const [currentPage, setCurrentPage] = useState(1)
@@ -24,6 +24,7 @@ export const AllModal: React.FC<ModalProps> = ({ onClose, data }) => {
   const handlePageChange = (_: React.ChangeEvent<unknown>, page: number) => {
     setCurrentPage(page)
   }
+  const filteredMemos = data.memos.filter((item) => item.memo !== '')
 
   const pageCount = Math.ceil(data.memos.length / MEMOS_PER_PAGE)
 
@@ -47,41 +48,56 @@ export const AllModal: React.FC<ModalProps> = ({ onClose, data }) => {
         <HappinessAllGraph data={data} />
         {data.memos !== undefined && (
           <>
-            <hr style={{ marginTop: '10px' }}></hr>
-            <p style={{ marginTop: '10px', fontSize: '20px' }}>メモ一覧</p>
-            <div style={{ marginTop: '10px', height: '144px' }}>
-              {data.memos
-                .filter(Boolean)
+            <hr style={{ marginTop: '5px' }}></hr>
+            <p style={{ marginTop: '5px', fontSize: '18px' }}>メモ一覧</p>
+            <div style={{ marginTop: '5px', height: '220px' }}>
+              {filteredMemos
                 .slice(
                   (currentPage - 1) * MEMOS_PER_PAGE,
                   currentPage * MEMOS_PER_PAGE
                 )
-                .map((title: string, index: number) => (
+                .map(({ timestamp, memo }, index: number) => (
                   <div
                     style={{
+                      lineHeight: 1.5,
+                      marginTop: '10px',
+                      fontSize: '12px',
+                      width: '300px',
                       display: 'flex',
-                      marginTop: '2px',
                     }}
                     key={index}
                   >
-                    ■
-                    <span
+                    ・
+                    <div
                       style={{
-                        fontSize: '12px',
-                        marginTop: '5px',
-                        marginLeft: '2px',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
                       }}
                     >
-                      {title}
-                    </span>
+                      <div
+                        style={{ flex: '1 1 auto', wordBreak: 'break-word' }}
+                      >
+                        {memo}
+                      </div>
+                      <div
+                        style={{
+                          flex: '0 0 auto',
+                          whiteSpace: 'nowrap',
+                          marginTop: '0px',
+                        }}
+                      >
+                        {timestamp}
+                      </div>
+                    </div>
                   </div>
                 ))}
             </div>
+
             <Pagination
               sx={{
                 display: 'flex',
                 justifyContent: 'center',
-                marginTop: '10px',
+                marginTop: '20px',
               }}
               count={pageCount}
               color="primary"
