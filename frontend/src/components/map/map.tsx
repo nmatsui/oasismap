@@ -47,6 +47,8 @@ const defaultZoom = loadEnvAsNumber(
   String(process.env.NEXT_PUBLIC_MAP_DEFAULT_ZOOM),
   15
 )
+const maxBounds = new LatLngBounds(new LatLng(-90, -180), new LatLng(90, 180))
+const maxBoundsViscosity = 1.0
 
 type Props = {
   pointEntities: any[]
@@ -184,8 +186,6 @@ const Map: React.FC<Props> = ({
   const [error, setError] = useState<Error | null>(null)
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null)
   const noticeMessageContext = useContext(messageContext)
-  const maxBounds = new LatLngBounds(new LatLng(-90, -180), new LatLng(90, 180))
-  const maxBoundsViscosity = 1.0
 
   useEffect(() => {
     // geolocation が http に対応していないため固定値を設定
