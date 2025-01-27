@@ -1,4 +1,5 @@
 import { HappinessKey } from '@/types/happiness-key'
+import { HappinessFields } from '@/types/happiness-set'
 
 export interface Data {
   id: string
@@ -12,13 +13,6 @@ export interface Data {
     }
   }
   timestamp: string
-  answers: {
-    happiness1: number
-    happiness2: number
-    happiness3: number
-    happiness4: number
-    happiness5: number
-    happiness6: number
-  }
+  answers: HappinessFields
   memo: string
 }

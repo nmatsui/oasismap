@@ -32,6 +32,7 @@ import {
   MapDataItem,
 } from '@/types/happiness-all-response'
 import { LoadingContext } from '@/contexts/loading-context'
+import { happinessSet } from '@/types/happiness-set'
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
 
@@ -41,7 +42,11 @@ const HappinessAll: React.FC = () => {
   const [period, setPeriod] = useState(PeriodType.Month)
   const [pinData, setPinData] = useState<any>([])
   const willStop = useRef(false)
-  const [OurHappiness, setOurHappiness] = useState<any>([])
+  const [OurHappiness, setOurHappiness] = useState<happinessSet>({
+    month: [],
+    day: [],
+    time: [],
+  })
   const { isTokenFetched } = useTokenFetchStatus()
   const { startProps, endProps, updatedPeriod } = useDateTimeProps(period)
   const { data: session, update } = useSession()
@@ -72,7 +77,7 @@ const HappinessAll: React.FC = () => {
       setIsLoading(true)
       willStop.current = false
       setPinData([])
-      setOurHappiness([])
+      setOurHappiness({ month: [], day: [], time: [] })
 
       const url = backendUrl + '/api/happiness/all'
       const startDateTime = toDateTime(startProps.value).toISO()

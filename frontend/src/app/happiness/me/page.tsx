@@ -40,7 +40,11 @@ const HappinessMe: React.FC = () => {
   const [entityByEntityId, setEntityByEntityId] = useState<EntityByEntityId>({})
   const willStop = useRef(false)
   const isMounted = useRef(false)
-  const [MyHappiness, setMyHappiness] = useState<any>([])
+  const [MyHappiness, setMyHappiness] = useState<happinessSet>({
+    month: [],
+    day: [],
+    time: [],
+  })
   const { isTokenFetched } = useTokenFetchStatus()
   const searchParams = useSearchParams()
   const initialEntityId = searchParams.get('entityId')
@@ -64,7 +68,7 @@ const HappinessMe: React.FC = () => {
       setIsLoading(true)
       willStop.current = false
       setPinData([])
-      setMyHappiness([])
+      setMyHappiness({ month: [], day: [], time: [] })
       setEntityByEntityId({})
       setHighlightTarget({ lastUpdateBy: 'init', xAxisValue: null })
 

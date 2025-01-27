@@ -10,6 +10,7 @@ import { BarChart, Bar, Legend } from 'recharts'
 import { questionTitles } from '@/libs/constants'
 import { HappinessKey } from '@/types/happiness-key'
 import { HAPPINESS_KEYS } from '@/libs/constants'
+import { happinessObj } from '@/types/happiness-set'
 
 const BarGraph = (props: any) => {
   const {
@@ -24,7 +25,8 @@ const BarGraph = (props: any) => {
   const isEmptyData = !plotdata || plotdata.length === 0
 
   const handleClick = (data: any) => {
-    const barXAxisValue = Number(data.timestamp)
+    const clickedHappinesObj: happinessObj = data.payload
+    const barXAxisValue = Number(clickedHappinesObj.timestamp)
     if (highlightTarget.xAxisValue === barXAxisValue) {
       setHighlightTarget({ lastUpdateBy: 'Graph', xAxisValue: null })
     } else {
