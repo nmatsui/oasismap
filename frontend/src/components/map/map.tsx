@@ -12,7 +12,6 @@ import React, { useState, useEffect, useContext } from 'react'
 import { LatLng, LatLngTuple, LatLngBounds, divIcon } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getIconByType } from '../utils/icon'
-import { HappinessKey } from '@/types/happiness-key'
 import { IconType } from '@/types/icon-type'
 import { EntityByEntityId } from '@/types/entityByEntityId'
 import { IconButton } from '@mui/material'
@@ -27,6 +26,7 @@ import { AllPopup } from './allPopup'
 import { MessageType } from '@/types/message-type'
 import { messageContext } from '@/contexts/message-context'
 import { HighlightTarget } from '@/types/highlightTarget'
+import { HappinessKey } from '@/types/happiness-key'
 import { PeriodType } from '@/types/period'
 
 // 環境変数の取得に失敗した場合は日本経緯度原点を設定
@@ -60,7 +60,7 @@ type Props = {
     servicePath: string
   }
   iconType: IconType
-  pinData: any[]
+  pinData: Pin[]
   initialEntityId?: string | null
   setSelectedLayers?: React.Dispatch<React.SetStateAction<HappinessKey[]>>
   setBounds?: React.Dispatch<React.SetStateAction<LatLngBounds | undefined>>
@@ -102,11 +102,12 @@ const OnPopupClose = ({ onPopupClose }: { onPopupClose: () => void }) => {
   return null
 }
 
-const getActive = (
-  timestamp: Date,
+const pinIsActive = (
+  pin: Pin,
   activeTimestamp: { start: Date; end: Date } | null
 ) => {
-  if (!timestamp || !activeTimestamp) return true
+  if (!pin.timestamp || !activeTimestamp) return true
+  const timestamp = new Date(pin.timestamp)
   return activeTimestamp.start <= timestamp && timestamp <= activeTimestamp.end
 }
 
@@ -211,7 +212,7 @@ const MapOverlay = ({
             iconType,
             pin.type,
             pin.answer,
-            getActive(new Date(pin.timestamp), activeTimestamp)
+            pinIsActive(pin, activeTimestamp)
           )}
           zIndexOffset={-layerIndex}
           eventHandlers={{
@@ -407,7 +408,7 @@ const Map: React.FC<Props> = ({
     return <p>Loading...</p>
   }
 
-  const filteredPinsByType = (type: string) =>
+  const filteredPinsByType = (type: HappinessKey) =>
     pinData.filter((pin) => pin.type === type)
 
   let initialEntityUuid: string | undefined = undefined

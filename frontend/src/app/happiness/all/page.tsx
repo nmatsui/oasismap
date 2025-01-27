@@ -32,6 +32,7 @@ import {
   MapDataItem,
 } from '@/types/happiness-all-response'
 import { LoadingContext } from '@/contexts/loading-context'
+import { Pin } from '@/types/pin'
 import { happinessSet } from '@/types/happiness-set'
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
@@ -40,7 +41,7 @@ const HappinessAll: React.FC = () => {
   const noticeMessageContext = useContext(messageContext)
   const router = useRouter()
   const [period, setPeriod] = useState(PeriodType.Month)
-  const [pinData, setPinData] = useState<any>([])
+  const [pinData, setPinData] = useState<Pin[]>([])
   const willStop = useRef(false)
   const [OurHappiness, setOurHappiness] = useState<happinessSet>({
     month: [],

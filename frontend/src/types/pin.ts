@@ -1,6 +1,8 @@
+import { HappinessKey } from './happiness-key'
+
 export interface Pin {
   id: string
-  type: string
+  type: HappinessKey
   latitude: number
   longitude: number
   answer: number

@@ -1,10 +1,11 @@
 import L, { DivIconOptions } from 'leaflet'
 import { mapColors } from '@/theme/color'
 import { IconType } from '@/types/icon-type'
+import { HappinessKey } from '@/types/happiness-key'
 
 export const getIconByType = (
   iconType: IconType,
-  type: string,
+  type: HappinessKey,
   answer: number,
   isActive: boolean
 ) => {

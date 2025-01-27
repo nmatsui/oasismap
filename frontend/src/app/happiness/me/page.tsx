@@ -37,7 +37,7 @@ const HappinessMe: React.FC = () => {
   const noticeMessageContext = useContext(messageContext)
   const router = useRouter()
   const [period, setPeriod] = useState(PeriodType.Month)
-  const [pinData, setPinData] = useState<any>([])
+  const [pinData, setPinData] = useState<Pin[]>([])
   const [entityByEntityId, setEntityByEntityId] = useState<EntityByEntityId>({})
   const willStop = useRef(false)
   const isMounted = useRef(false)

@@ -25,7 +25,7 @@ export function GetPin(arr: (Data | MapDataItem)[]): Pin[] {
         memo = undefined
       }
 
-      return {
+      const pin: Pin = {
         id: data.id,
         type: data.type,
         latitude: data.location.value.coordinates[0],
@@ -41,5 +41,6 @@ export function GetPin(arr: (Data | MapDataItem)[]): Pin[] {
         memo: memo,
         timestamp: timestamp,
       }
+      return pin
     })
 }
