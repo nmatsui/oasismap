@@ -29,7 +29,7 @@ const loadEnvAsNumber = (
 
 const defaultZoom = loadEnvAsNumber(
   String(process.env.NEXT_PUBLIC_MAP_DEFAULT_ZOOM),
-  13
+  15
 )
 
 type Props = {
