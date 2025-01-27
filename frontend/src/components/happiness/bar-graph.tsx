@@ -67,32 +67,38 @@ const BarGraph = (props: any) => {
             <YAxis />
             <Tooltip />
             <Legend verticalAlign="bottom" />
-            {HAPPINESS_KEYS.map((dataKey: HappinessKey, i: number) => {
-              return (
-                <Bar
-                  key={dataKey}
-                  dataKey={dataKey}
-                  stackId={1}
-                  fill={color[i]}
-                  name={questionTitles[dataKey]}
-                  onClick={handleClick}
-                >
-                  {plotdata !== undefined &&
-                    plotdata.map((data: any, index: number) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={
-                          // xAxisValueがnullの場合、全体のハイライトは解除されているのでカラーで表示
-                          !highlightTarget.xAxisValue ||
-                          Number(data.timestamp) === highlightTarget.xAxisValue
-                            ? color[i]
-                            : 'grey'
-                        }
-                      />
-                    ))}
-                </Bar>
-              )
-            })}
+            {HAPPINESS_KEYS.map(
+              (dataKey: HappinessKey, happinessIndex: number) => {
+                return (
+                  <Bar
+                    key={dataKey}
+                    dataKey={dataKey}
+                    stackId={1}
+                    fill={color[happinessIndex]}
+                    name={questionTitles[dataKey]}
+                    onClick={handleClick}
+                  >
+                    {plotdata !== undefined &&
+                      plotdata.map(
+                        (data: happinessObj, plotdataIndex: number) => (
+                          <Cell
+                            key={`cell-${plotdataIndex}`}
+                            fill={
+                              // xAxisValueがnullの場合、全体のハイライトは解除されているのでカラーで表示
+                              !highlightTarget.xAxisValue ||
+                              Number(data.timestamp) ===
+                                highlightTarget.xAxisValue
+                                  ? color[happinessIndex]
+                                  : 'grey'
+                            }
+                          />
+                        )
+                      )
+                    }
+                  </Bar>
+                )
+              }
+            )}
           </BarChart>
         )}
       </ResponsiveContainer>
