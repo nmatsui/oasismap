@@ -48,7 +48,7 @@ const HappinessMe: React.FC = () => {
   })
   const { isTokenFetched } = useTokenFetchStatus()
   const searchParams = useSearchParams()
-  const initialEntityId = searchParams.get('entityId')
+  const searchEntityId = searchParams.get('entityId')
   const timestamp = searchParams.get('timestamp')
   const { startProps, endProps, updatedPeriod } = useDateTimeProps(
     period,
@@ -63,6 +63,12 @@ const HappinessMe: React.FC = () => {
     lastUpdateBy: 'init',
     xAxisValue: null,
   })
+  const [initialEntityId, setInitialEntityId] = useState<
+    string | null | undefined
+  >(undefined)
+  if (searchEntityId && initialEntityId === undefined) {
+    setInitialEntityId(searchEntityId)
+  }
 
   const getData = async () => {
     try {
@@ -218,10 +224,11 @@ const HappinessMe: React.FC = () => {
           pinData={pinData}
           initialEntityId={initialEntityId}
           entityByEntityId={entityByEntityId}
-          onPopupClose={() =>
+          onPopupClose={() => {
             // 画面遷移時に発火させないため、マウント時のみクエリパラメータの削除を実行
             isMounted.current && router.replace('/happiness/me')
-          }
+            setInitialEntityId(null)
+          }}
           period={period}
           highlightTarget={highlightTarget}
           setHighlightTarget={setHighlightTarget}
