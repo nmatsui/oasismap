@@ -241,7 +241,7 @@ const ListTable: React.FC<ListTableProps> = ({
     >
       <Table
         stickyHeader
-        sx={{ px: '8px 4px', tableLayout: 'fixed', width: '100%' }}
+        sx={{ px: '8px', tableLayout: 'fixed', width: '100%' }}
       >
         <TableHead>
           <TableRow
@@ -270,7 +270,10 @@ const ListTable: React.FC<ListTableProps> = ({
                     flexFlow: { xs: 'column', sm: 'row' },
                     mx: { xs: 0, sm: '4px' },
                     '& .MuiTableSortLabel-icon': {
-                      paddingTop: '5px',
+                      paddingTop: {
+                        xs: '5px',
+                        sm: 0,
+                      },
                     },
                   }}
                 >
