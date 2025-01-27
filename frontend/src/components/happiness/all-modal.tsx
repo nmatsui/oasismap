@@ -26,7 +26,7 @@ export const AllModal: React.FC<ModalProps> = ({ onClose, data }) => {
   }
   const filteredMemos = data.memos.filter((item) => item.memo !== '')
 
-  const pageCount = Math.ceil(data.memos.length / MEMOS_PER_PAGE)
+  const pageCount = Math.ceil(filteredMemos.length / MEMOS_PER_PAGE)
 
   return (
     <Modal open={!!data} onClose={onClose}>
