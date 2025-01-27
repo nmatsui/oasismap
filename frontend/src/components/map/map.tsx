@@ -26,6 +26,7 @@ import { MePopup } from './mePopup'
 import { AllPopup } from './allPopup'
 import { MessageType } from '@/types/message-type'
 import { messageContext } from '@/contexts/message-context'
+import { HighlightTarget } from '@/types/highlightTarget'
 import { PeriodType } from '@/types/period'
 
 // 環境変数の取得に失敗した場合は日本経緯度原点を設定
@@ -65,10 +66,8 @@ type Props = {
   setBounds?: React.Dispatch<React.SetStateAction<LatLngBounds | undefined>>
   entityByEntityId?: EntityByEntityId
   onPopupClose?: () => void
-  highlightTarget?: { lastUpdateBy: string; xAxisValue: number | null }
-  setHighlightTarget?: React.Dispatch<
-    React.SetStateAction<{ lastUpdateBy: string; xAxisValue: number | null }>
-  >
+  highlightTarget?: HighlightTarget
+  setHighlightTarget?: React.Dispatch<React.SetStateAction<HighlightTarget>>
   period?: PeriodType
 }
 
@@ -76,10 +75,8 @@ const HighlightListener = ({
   highlightTarget,
   setHighlightTarget,
 }: {
-  highlightTarget: { lastUpdateBy: string; xAxisValue: number | null }
-  setHighlightTarget: React.Dispatch<
-    React.SetStateAction<{ lastUpdateBy: string; xAxisValue: number | null }>
-  >
+  highlightTarget: HighlightTarget
+  setHighlightTarget: React.Dispatch<React.SetStateAction<HighlightTarget>>
 }) => {
   // グラフクリックによってハイライト状態が変更された場合はポップアップを閉じる
   const map = useMap()
@@ -200,9 +197,7 @@ const MapOverlay = ({
   initialPopupPin: Pin | undefined
   layerIndex: number
   setSelectedPin: React.Dispatch<React.SetStateAction<Pin | null>>
-  setHighlightTarget?: React.Dispatch<
-    React.SetStateAction<{ lastUpdateBy: string; xAxisValue: number | null }>
-  >
+  setHighlightTarget?: React.Dispatch<React.SetStateAction<HighlightTarget>>
   period?: PeriodType
   activeTimestamp: { start: Date; end: Date } | null
 }) => (

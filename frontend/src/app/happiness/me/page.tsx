@@ -27,6 +27,7 @@ import { useFetchData } from '@/libs/fetch'
 import { toDateTime } from '@/libs/date-converter'
 import { useTokenFetchStatus } from '@/hooks/token-fetch-status'
 import { happinessSet } from '@/types/happiness-set'
+import { HighlightTarget } from '@/types/highlightTarget'
 import { Pin } from '@/types/pin'
 import { LoadingContext } from '@/contexts/loading-context'
 
@@ -58,10 +59,10 @@ const HappinessMe: React.FC = () => {
   const { fetchData } = useFetchData()
   const [isLoaded, setIsLoaded] = useState(false)
 
-  const [highlightTarget, setHighlightTarget] = useState<{
-    lastUpdateBy: string
-    xAxisValue: number | null
-  }>({ lastUpdateBy: 'init', xAxisValue: null })
+  const [highlightTarget, setHighlightTarget] = useState<HighlightTarget>({
+    lastUpdateBy: 'init',
+    xAxisValue: null,
+  })
 
   const getData = async () => {
     try {
