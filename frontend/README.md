@@ -48,3 +48,32 @@ npm run test
 ```bash
 npm run test:cov
 ```
+## e2eテスト実行方法
+### e2eテスト内で、一般ユーザーのログインに利用するGoogleアカウントを設定する
+- .envに以下を追記
+- GOOGLE_MFA_SECRET_KEYの取得は、[こちらの記事](https://dev.classmethod.jp/articles/playwright-e2e-otp-mfa/)を参考。
+- MFAを設定していないGoogleアカウントであれば、GOOGLE_MFA_SECRET_KEYを空にしておく
+```
+GOOGLE_MFA_SECRET_KEY=CHANGE_TO_MFA_SECRET_KEY   # MFAを設定していない場合は空にしておく
+GOOGLE_EMAIL=CHANGE_TO_EMAIL_ADDRESS
+GOOGLE_PASSWORD='CHANGE_TO_PASSWORD'  # 特殊記号がある場合はシングルクォートで囲む方が安全か
+```
+### 環境起動
+```bash
+docker compose -f docker-compose-dev.yml up -d
+```
+### パッケージインストール
+frontendコンテナ内で実行
+```bash
+npm ci
+```
+### e2eテストに利用するブラウザ、OSパッケージインストール
+frontendコンテナ内で実行
+```bash
+npm run test:e2e:prepare
+```
+### e2eテスト実行
+frontendコンテナ内で実行
+```bash
+npm run test:e2e
+```
