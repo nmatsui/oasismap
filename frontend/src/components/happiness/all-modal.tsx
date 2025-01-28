@@ -24,7 +24,7 @@ export const AllModal: React.FC<ModalProps> = ({ onClose, data }) => {
   const handlePageChange = (_: React.ChangeEvent<unknown>, page: number) => {
     setCurrentPage(page)
   }
-  const filteredMemos = data.memos.filter((item) => item.memo !== '')
+  const filteredMemos = data.memos.filter((item) => item.memo)
 
   const pageCount = Math.ceil(filteredMemos.length / MEMOS_PER_PAGE)
 
@@ -92,7 +92,6 @@ export const AllModal: React.FC<ModalProps> = ({ onClose, data }) => {
                   </div>
                 ))}
             </div>
-
             <Pagination
               sx={{
                 display: 'flex',

@@ -13,9 +13,9 @@ export const AllPopup = ({
   if (pin.memos === undefined) {
     return
   }
-  const memoArray: any = []
+  const memoArray: string[] = []
   {
-    pin.memos.map((title) => memoArray.push(title.memo))
+    pin.memos.map((memo) => memoArray.push(memo.memo))
   }
   return (
     <Popup>
