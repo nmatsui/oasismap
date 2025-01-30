@@ -38,7 +38,6 @@ export const AllModal: React.FC<ModalProps> = ({ onClose, data }) => {
           transform: 'translate(-50%, -50%)',
           maxWidth: '90%',
           maxHeight: '90%',
-          overflow: 'auto',
           bgcolor: 'background.paper',
           border: '2px solid #000',
           boxShadow: 24,
@@ -50,7 +49,9 @@ export const AllModal: React.FC<ModalProps> = ({ onClose, data }) => {
           <>
             <hr style={{ marginTop: '5px' }}></hr>
             <p style={{ marginTop: '5px', fontSize: '18px' }}>メモ一覧</p>
-            <div style={{ marginTop: '5px', height: '220px' }}>
+            <div
+              style={{ marginTop: '5px', height: '220px', fontSize: '12px' }}
+            >
               {filteredMemos
                 .slice(
                   (currentPage - 1) * MEMOS_PER_PAGE,
@@ -58,36 +59,16 @@ export const AllModal: React.FC<ModalProps> = ({ onClose, data }) => {
                 )
                 .map(({ timestamp, memo }, index: number) => (
                   <div
+                    key={index}
                     style={{
-                      lineHeight: 1.5,
                       marginTop: '10px',
-                      fontSize: '12px',
-                      width: '300px',
                       display: 'flex',
                     }}
-                    key={index}
                   >
                     ・
-                    <div
-                      style={{
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <div
-                        style={{ flex: '1 1 auto', wordBreak: 'break-word' }}
-                      >
-                        {memo}
-                      </div>
-                      <div
-                        style={{
-                          flex: '0 0 auto',
-                          whiteSpace: 'nowrap',
-                          marginTop: '0px',
-                        }}
-                      >
-                        {timestamp}
-                      </div>
+                    <div>
+                      <div>{memo}</div>
+                      <div>{timestamp}</div>
                     </div>
                   </div>
                 ))}

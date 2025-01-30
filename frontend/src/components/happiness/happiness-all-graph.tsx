@@ -76,19 +76,25 @@ export const HappinessAllGraph = ({ data }: { data: Pin }) => {
         )}
         barSize={30}
         shape={(props: unknown) => {
-          let index: number
-          if (typeof props === 'object' && props !== null && 'index' in props) {
-            if (typeof props.index === 'number') {
-              index = props.index
-            } else {
-              return <></>
-            }
-          } else {
-            return <></>
-          }
+          if (typeof props !== 'object' || props === null) return <></>
+          if (
+            'index' in props &&
+            'y' in props &&
+            'width' in props &&
+            'height' in props
+          ) {
+            if (typeof props.index !== 'number') return <></>
+            if (typeof props.y !== 'number') return <></>
+            if (typeof props.width !== 'number') return <></>
+            if (typeof props.height !== 'number') return <></>
+          } else return <></>
+
+          const { y, width, height, index } = props
           return (
             <rect
-              {...props}
+              y={y}
+              width={width}
+              height={height}
               // 棒グラフ開始位置の調整部分
               x={HAPPINESS_ALL_BAR_GRAPH_YAXIS_WIDTH}
               fill={graphColors[index]}
