@@ -33,6 +33,35 @@ import { LoadingContext } from '@/contexts/loading-context'
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
 
+function getSnackbarMessage(xAxisValue: number, period: PeriodType) {
+  const date = new Date()
+  let nowYear = date.getFullYear()
+  let nowMonthIndex = date.getMonth()
+  let nowMonth = nowMonthIndex + 1
+  let nowDate = date.getDate()
+  const nowHour = date.getHours()
+  if (xAxisValue < 0) {
+    return ''
+  }
+
+  switch (period) {
+    case PeriodType.Month:
+      // 現在の月数よりも大きい値の月数が指定された場合、指定された月は去年である
+      if (nowMonth < xAxisValue) nowYear -= 1
+      return `${nowYear}年${xAxisValue}月`
+
+    case PeriodType.Day:
+      // 現在の日数よりも大きい値の日数が指定された場合、指定された日にちは先月である
+      if (nowDate < xAxisValue) nowMonthIndex -= 1
+      return `${nowYear}年${nowMonth}月${xAxisValue}日`
+
+    case PeriodType.Time:
+      // 現在の時間よりも大きい値の時間が指定された場合、指定された時間は昨日である
+      if (nowHour < xAxisValue) nowDate -= 1
+      return `${nowYear}年${nowMonth}月${nowDate}日${xAxisValue}時`
+  }
+}
+
 const HappinessMe: React.FC = () => {
   const noticeMessageContext = useContext(messageContext)
   const router = useRouter()
@@ -194,37 +223,8 @@ const HappinessMe: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTokenFetched, updatedPeriod])
 
-  function getSnackbarMessage(xAxisValue: number, period: PeriodType) {
-    const date = new Date()
-    let nowYear = date.getFullYear()
-    let nowMonthIndex = date.getMonth()
-    let nowMonth = nowMonthIndex + 1
-    let nowDate = date.getDate()
-    const nowHour = date.getHours()
-    if (xAxisValue < 0) {
-      return ''
-    }
-
-    switch (period) {
-      case PeriodType.Month:
-        // 現在の月数よりも大きい値の月数が指定された場合、指定された月は去年である
-        if (nowMonth < xAxisValue) nowYear -= 1
-        return `${nowYear}年${xAxisValue}月`
-
-      case PeriodType.Day:
-        // 現在の日数よりも大きい値の日数が指定された場合、指定された日にちは先月である
-        if (nowDate < xAxisValue) nowMonthIndex -= 1
-        return `${nowYear}年${nowMonth}月${xAxisValue}日`
-
-      case PeriodType.Time:
-        // 現在の時間よりも大きい値の時間が指定された場合、指定された時間は昨日である
-        if (nowHour < xAxisValue) nowDate -= 1
-        return `${nowYear}年${nowMonth}月${nowDate}日${xAxisValue}時`
-    }
-  }
-
   useEffect(() => {
-    if (highlightTarget.xAxisValue && 0 < highlightTarget.xAxisValue) {
+    if (highlightTarget.xAxisValue && highlightTarget.xAxisValue > 0) {
       noticeMessageContext.showMessage(
         `${getSnackbarMessage(highlightTarget.xAxisValue, period)}のデータをハイライトします`,
         MessageType.Success
