@@ -16,6 +16,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  TableSortLabel,
 } from '@mui/material'
 import {
   CheckCircle,
@@ -25,9 +26,18 @@ import {
 } from '@mui/icons-material'
 import LayersIcon from '@mui/icons-material/Layers'
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
+import SwapVertIcon from '@mui/icons-material/SwapVert'
 import { Data } from '@/types/happiness-list-response'
 import { timestampToDateTime } from '@/libs/date-converter'
 import DeleteConfirmationDialog from '@/components/happiness/delete-confirmation-dialog'
+import { HappinessKey } from '@/types/happiness-key'
+
+type Order = 'asc' | 'desc'
+
+type TableCellCategories = {
+  title: string
+  key: HappinessKey
+}
 
 interface ListTableProps {
   listData: Data[]
@@ -38,6 +48,32 @@ interface ListTableProps {
 interface RowProps {
   row: Data
   openDialog: (row: Data) => void
+}
+
+const tableCellCategories: TableCellCategories[] = [
+  { title: 'ワクワク', key: 'happiness1' },
+  { title: '学び', key: 'happiness2' },
+  { title: 'ホッとする', key: 'happiness3' },
+  { title: '自分を取り戻せる', key: 'happiness4' },
+  { title: '自慢', key: 'happiness5' },
+  { title: '思い出', key: 'happiness6' },
+]
+
+function getComparator(
+  order: Order,
+  orderBy: HappinessKey
+): (a: Data, b: Data) => number {
+  return order === 'asc'
+    ? (a, b) => ascendingComparator(a, b, orderBy)
+    : (a, b) => -ascendingComparator(a, b, orderBy)
+}
+
+function ascendingComparator(a: Data, b: Data, orderBy: HappinessKey) {
+  if (b.answers[orderBy] < a.answers[orderBy]) {
+    return 1
+  } else {
+    return -1
+  }
 }
 
 const Row: React.FC<RowProps> = ({ row, openDialog }) => {
@@ -158,6 +194,34 @@ const ListTable: React.FC<ListTableProps> = ({
   isLoaded,
 }) => {
   const [selectedData, setSelectedData] = useState<Data | null>(null)
+  const [order, setOrder] = useState<Order | undefined>(undefined)
+  const [orderBy, setOrderBy] = useState<HappinessKey | null>(null)
+
+  const handleSort = (property: HappinessKey) => {
+    if (orderBy === property) {
+      if (order === undefined) {
+        setOrder('desc')
+        return
+      }
+      if (order === 'desc') {
+        setOrder('asc')
+        return
+      }
+      if (order === 'asc') {
+        setOrder(undefined)
+        setOrderBy(null)
+        return
+      }
+    } else {
+      setOrder('desc')
+      setOrderBy(property)
+      return
+    }
+  }
+  const sortedListData =
+    order === undefined || orderBy === null
+      ? [...listData]
+      : [...listData].sort(getComparator(order, orderBy))
 
   const deleteRowData = () => {
     if (selectedData) {
@@ -177,7 +241,7 @@ const ListTable: React.FC<ListTableProps> = ({
     >
       <Table
         stickyHeader
-        sx={{ px: '16px', tableLayout: 'fixed', width: '100%' }}
+        sx={{ px: '8px', tableLayout: 'fixed', width: '100%' }}
       >
         <TableHead>
           <TableRow
@@ -190,12 +254,33 @@ const ListTable: React.FC<ListTableProps> = ({
             }}
           >
             <TableCell sx={{ pl: '8px', width: '28px' }} />
-            <TableCell>ワクワク</TableCell>
-            <TableCell>学び</TableCell>
-            <TableCell>ホッとする</TableCell>
-            <TableCell>自分を取り戻せる</TableCell>
-            <TableCell>自慢</TableCell>
-            <TableCell>思い出</TableCell>
+            {tableCellCategories.map(({ title, key }) => (
+              <TableCell
+                key={key}
+                sx={{
+                  padding: '16px 4px',
+                }}
+              >
+                <TableSortLabel
+                  onClick={() => handleSort(key)}
+                  active={orderBy === key || orderBy === null}
+                  direction={orderBy === key ? order : 'desc'}
+                  IconComponent={orderBy !== null ? undefined : SwapVertIcon}
+                  sx={{
+                    flexFlow: { xs: 'column', sm: 'row' },
+                    mx: { xs: 0, sm: '4px' },
+                    '& .MuiTableSortLabel-icon': {
+                      paddingTop: {
+                        xs: '5px',
+                        sm: 0,
+                      },
+                    },
+                  }}
+                >
+                  {title}
+                </TableSortLabel>
+              </TableCell>
+            ))}
             <TableCell sx={{ width: '28px' }} />
           </TableRow>
         </TableHead>
@@ -207,7 +292,7 @@ const ListTable: React.FC<ListTableProps> = ({
               </TableCell>
             </TableRow>
           ) : (
-            listData.map((row) => (
+            sortedListData.map((row: any) => (
               <Row
                 key={row.id}
                 row={row}
