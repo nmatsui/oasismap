@@ -1,8 +1,8 @@
 import {
   MapContainer,
   TileLayer,
-  ZoomControl,
   useMap,
+  ZoomControl,
   Marker,
   LayersControl,
   LayerGroup,
@@ -457,41 +457,48 @@ const Map: React.FC<Props> = ({
         {setBounds && <Bounds setBounds={setBounds} />}
         <MoveToCurrentPositionControl />
         <ZoomControl position={'bottomleft'} />
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={18}
-          minZoom={5}
-        />
-        <LayersControl position="topright">
-          {HAPPINESS_KEYS.map((type, index) => {
-            const filteredPins = filteredPinsByType(type)
-            return (
-              <MapOverlay
-                key={type}
-                iconType={iconType}
-                type={questionTitles[type]}
-                layerIndex={index}
-                filteredPins={filteredPins}
-                initialPopupPin={filteredPins.find(
-                  (pin) => pin.id === initialEntityUuid
-                )}
-                setSelectedPin={setSelectedPin}
-                setHighlightTarget={setHighlightTarget}
-                period={period}
-                activeTimestamp={activeTimestamp}
-              />
-            )
-          })}
-        </LayersControl>
-        {onPopupClose && <OnPopupClose onPopupClose={onPopupClose} />}
-        {currentPosition && (
-          <Marker
-            position={currentPosition}
-            icon={currentPositionIcon}
-          ></Marker>
-        )}
-        {highlightTarget && setHighlightTarget && (
+        <LayersControl.BaseLayer checked name="標準地図">
+            <TileLayer
+              attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxZoom={18}
+              minZoom={5}
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="淡色地図">
+            <TileLayer
+              attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">出典：地理院タイル「Shoreline data is derived from: United States. National Imagery and Mapping Agency. "Vector Map Level 0 (VMAP0)." Bethesda, MD: Denver, CO: The Agency; USGS Information Services, 1997.」</a>'
+              url="https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png"
+              maxZoom={18}
+              minZoom={5}
+            />
+          </LayersControl.BaseLayer>
+      <LayersControl position="topright">
+        {HAPPINESS_KEYS.map((type, index) => {
+          const filteredPins = filteredPinsByType(type)
+          return (
+            <MapOverlay
+              key={type}
+              iconType={iconType}
+              type={questionTitles[type]}
+              layerIndex={index}
+              filteredPins={filteredPins}
+              initialPopupPin={filteredPins.find(
+                (pin) => pin.id === initialEntityUuid
+              )}
+              setSelectedPin={setSelectedPin}
+              setHighlightTarget={setHighlightTarget}
+              period={period}
+              activeTimestamp={activeTimestamp}
+            />
+          )
+        })}
+      </LayersControl>
+      {onPopupClose && <OnPopupClose onPopupClose={onPopupClose} />}
+      {currentPosition && (
+        <Marker position={currentPosition} icon={currentPositionIcon}></Marker>
+      )}
+      {highlightTarget && setHighlightTarget && (
           <HighlightListener
             highlightTarget={highlightTarget}
             setHighlightTarget={setHighlightTarget}
