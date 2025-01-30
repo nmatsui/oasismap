@@ -13,12 +13,16 @@ import React, { useState, useEffect } from 'react'
 import 'leaflet/dist/leaflet.css'
 import { getIconByType } from '../utils/icon'
 import { IconType } from '@/types/icon-type'
-import { ControllablePopup } from './controllablePopup'
 import { EntityByEntityId } from '@/types/entityByEntityId'
 import { IconButton } from '@mui/material'
 import MyLocationIcon from '@mui/icons-material/MyLocation'
 import CurrentPositionIcon from '@mui/icons-material/RadioButtonChecked'
 import { renderToString } from 'react-dom/server'
+import { DetailModal } from '../happiness/detailModal'
+import { Pin } from '@/types/pin'
+import { questionTitles } from '@/libs/constants'
+import { MePopup } from './mePopup'
+import { AllPopup } from './allPopup'
 
 // 環境変数の取得に失敗した場合は日本経緯度原点を設定
 const defaultLatitude =
@@ -50,7 +54,7 @@ type Props = {
   }
   iconType: IconType
   pinData: any[]
-  selectedEntityId?: string | null
+  initialEntityId?: string | null
   entityByEntityId?: EntityByEntityId
   onPopupClose?: () => void
 }
@@ -70,32 +74,22 @@ const OnPopupClose = ({ onPopupClose }: { onPopupClose: () => void }) => {
   return null
 }
 
-interface QuestionTitles {
-  [key: string]: string
-}
-const questionTitles: QuestionTitles = {
-  happiness1: 'ワクワクする場所',
-  happiness2: '発見の学びの場所',
-  happiness3: 'ホッとする場所',
-  happiness4: '自分を取り戻せる場所',
-  happiness5: '自慢の場所',
-  happiness6: '思い出の場所',
-}
-
 export { questionTitles }
 
 const MapOverlay = ({
   iconType,
   type,
   filteredPins,
+  initialPopupPin,
   layerIndex,
-  selectedPin,
+  setSelectedPin,
 }: {
   iconType: IconType
   type: string
-  filteredPins: any[]
+  filteredPins: Pin[]
+  initialPopupPin: Pin | undefined
   layerIndex: number
-  selectedPin: any
+  setSelectedPin: React.Dispatch<React.SetStateAction<Pin | null>>
 }) => (
   <LayersControl.Overlay checked name={type}>
     <LayerGroup>
@@ -106,47 +100,15 @@ const MapOverlay = ({
           icon={getIconByType(iconType, pin.type, pin.answer)}
           zIndexOffset={-layerIndex}
         >
-          <ControllablePopup
-            isOpened={pin.id === selectedPin?.id}
-            position={[pin.latitude, pin.longitude]}
-          >
-            <table border={1}>
-              {pin.basetime && (
-                <thead>
-                  <tr>
-                    <th>回答日時</th>
-                    <th>{pin.timestamp}</th>
-                  </tr>
-                </thead>
-              )}
-              <tbody>
-                <tr>
-                  <th>{questionTitles.happiness1}</th>
-                  <th>{Math.round(pin.answer1 * 10) / 10}</th>
-                </tr>
-                <tr>
-                  <th>{questionTitles.happiness2}</th>
-                  <th>{Math.round(pin.answer2 * 10) / 10}</th>
-                </tr>
-                <tr>
-                  <th>{questionTitles.happiness3}</th>
-                  <th>{Math.round(pin.answer3 * 10) / 10}</th>
-                </tr>
-                <tr>
-                  <th>{questionTitles.happiness4}</th>
-                  <th>{Math.round(pin.answer4 * 10) / 10}</th>
-                </tr>
-                <tr>
-                  <th>{questionTitles.happiness5}</th>
-                  <th>{Math.round(pin.answer5 * 10) / 10}</th>
-                </tr>
-                <tr>
-                  <th>{questionTitles.happiness6}</th>
-                  <th>{Math.round(pin.answer6 * 10) / 10}</th>
-                </tr>
-              </tbody>
-            </table>
-          </ControllablePopup>
+          {iconType === 'pin' ? (
+            <MePopup
+              pin={pin}
+              initialPopupPin={initialPopupPin}
+              setSelectedPin={setSelectedPin}
+            />
+          ) : (
+            <AllPopup pin={pin} />
+          )}
         </Marker>
       ))}
     </LayerGroup>
@@ -156,7 +118,7 @@ const MapOverlay = ({
 const Map: React.FC<Props> = ({
   iconType,
   pinData,
-  selectedEntityId,
+  initialEntityId,
   entityByEntityId,
   onPopupClose,
 }) => {
@@ -165,6 +127,7 @@ const Map: React.FC<Props> = ({
     null
   )
   const [error, setError] = useState<Error | null>(null)
+  const [selectedPin, setSelectedPin] = useState<Pin | null>(null)
 
   useEffect(() => {
     // geolocation が http に対応していないため固定値を設定
@@ -249,50 +212,53 @@ const Map: React.FC<Props> = ({
   const filteredPinsByType = (type: string) =>
     pinData.filter((pin) => pin.type === type)
 
-  let selectedEntityUuid: string | undefined = undefined
-  if (selectedEntityId) {
-    selectedEntityUuid = entityByEntityId?.[selectedEntityId]?.id
+  let initialEntityUuid: string | undefined = undefined
+  if (initialEntityId) {
+    initialEntityUuid = entityByEntityId?.[initialEntityId]?.id
   }
 
   return (
-    <MapContainer
-      center={center}
-      zoom={defaultZoom}
-      scrollWheelZoom={true}
-      zoomControl={false}
-    >
-      <MoveToCurrentPositionButton />
-      <ZoomControl position={'bottomleft'} />
-      <TileLayer
-        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        maxZoom={18}
-        minZoom={5}
-      />
-      <LayersControl position="topright">
-        {Object.keys(questionTitles).map((type, index) => {
-          const filteredPins = filteredPinsByType(type)
-          return (
-            <MapOverlay
-              key={type}
-              iconType={iconType}
-              type={questionTitles[type]}
-              layerIndex={index}
-              filteredPins={filteredPins}
-              selectedPin={filteredPins.find(
-                (pin) => pin.id === selectedEntityUuid
-              )}
-            />
-          )
-        })}
-      </LayersControl>
-      {!selectedEntityId && <ClosePopup />}
-      {onPopupClose && <OnPopupClose onPopupClose={onPopupClose} />}
-      {currentPosition && (
-        <Marker position={currentPosition} icon={currentPositionIcon}></Marker>
-      )}
-      <ClosePopup />
-    </MapContainer>
+    <>
+      <MapContainer
+        center={currentPosition}
+        zoom={defaultZoom}
+        scrollWheelZoom={true}
+        zoomControl={false}
+      >
+        <MoveToCurrentPositionButton />
+        <ZoomControl position={'bottomleft'} />
+        <TileLayer
+          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={18}
+          minZoom={5}
+        />
+        <LayersControl position="topright">
+          {Object.keys(questionTitles).map((type, index) => {
+            const filteredPins = filteredPinsByType(type)
+            return (
+              <MapOverlay
+                key={type}
+                iconType={iconType}
+                type={questionTitles[type]}
+                layerIndex={index}
+                filteredPins={filteredPins}
+                initialPopupPin={filteredPins.find(
+                  (pin) => pin.id === initialEntityUuid
+                )}
+                setSelectedPin={setSelectedPin}
+              />
+            )
+          })}
+        </LayersControl>
+        {!selectedPin && !initialEntityId && <ClosePopup />}
+        {onPopupClose && <OnPopupClose onPopupClose={onPopupClose} />}
+        {currentPosition && (
+          <Marker position={currentPosition} icon={currentPositionIcon}></Marker>
+        )}
+      </MapContainer>
+      <DetailModal data={selectedPin} onClose={() => setSelectedPin(null)} />
+    </>
   )
 }
 
