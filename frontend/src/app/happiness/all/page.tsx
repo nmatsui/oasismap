@@ -144,6 +144,7 @@ const HappinessAll: React.FC = () => {
             })
             allMapData[gridKey]['data'].forEach((data: MapDataItem) => {
               data.answers = { ...newAnswers }
+              data.memos = data.memos.concat(fetchedMapData['data'][0].memos)
             })
             allMapData[gridKey]['count'] += fetchedMapData['count']
           } else {

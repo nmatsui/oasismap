@@ -5,12 +5,12 @@ import { questionTitles } from '@/libs/constants'
 import { mapColors } from '@/theme/color'
 import { HappinessTitle } from './happiness-title'
 
-type DetailModalProps = {
+type MeModalProps = {
   data: Pin | null
   onClose: () => void
 }
 
-export const DetailModal: React.FC<DetailModalProps> = ({ onClose, data }) => {
+export const MeModal: React.FC<MeModalProps> = ({ onClose, data }) => {
   if (data === null) {
     return
   }
@@ -22,14 +22,9 @@ export const DetailModal: React.FC<DetailModalProps> = ({ onClose, data }) => {
           left: '50%',
           top: '50%',
           transform: 'translate(-50%, -50%)',
-          width: {
-            xs: '90%',
-            sm: '90%',
-            md: '80%',
-            lg: '60%',
-            xl: '30%',
-          },
-
+          maxWidth: '90%',
+          maxHeight: '90%',
+          overflow: 'auto',
           bgcolor: 'background.paper',
           border: '2px solid #000',
           boxShadow: 24,

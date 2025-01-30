@@ -19,7 +19,7 @@ import { IconButton } from '@mui/material'
 import MyLocationIcon from '@mui/icons-material/MyLocation'
 import CurrentPositionIcon from '@mui/icons-material/RadioButtonChecked'
 import { renderToString } from 'react-dom/server'
-import { DetailModal } from '../happiness/detailModal'
+import { MeModal } from '../happiness/me-modal'
 import { Pin } from '@/types/pin'
 import { HAPPINESS_KEYS, questionTitles } from '@/libs/constants'
 import { MePopup } from './mePopup'
@@ -28,6 +28,7 @@ import { MessageType } from '@/types/message-type'
 import { HighlightTarget } from '@/types/highlight-target'
 import { HappinessKey } from '@/types/happiness-key'
 import { PeriodType } from '@/types/period'
+import { AllModal } from '../happiness/all-modal'
 
 // 環境変数の取得に失敗した場合は日本経緯度原点を設定
 const defaultLatitude =
@@ -241,7 +242,7 @@ const MapOverlay = ({
               setSelectedPin={setSelectedPin}
             />
           ) : (
-            <AllPopup pin={pin} />
+            <AllPopup pin={pin} setSelectedPin={setSelectedPin} />
           )}
         </Marker>
       ))}
@@ -426,59 +427,63 @@ const Map: React.FC<Props> = ({
 
   return (
     <>
-    <MapContainer
-      center={currentPosition}
-      zoom={defaultZoom}
-      scrollWheelZoom={true}
-      zoomControl={false}
-      maxBounds={maxBounds}
-      maxBoundsViscosity={maxBoundsViscosity}
-    >
-      {setSelectedLayers && (
-        <SelectedLayers setSelectedLayers={setSelectedLayers} />
-      )}
-      {setBounds && <Bounds setBounds={setBounds} />}
-      <MoveToCurrentPositionButton />
-      <ZoomControl position={'bottomleft'} />
-      <TileLayer
-        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        maxZoom={18}
-        minZoom={5}
-      />
-      <LayersControl position="topright">
-        {HAPPINESS_KEYS.map((type, index) => {
-          const filteredPins = filteredPinsByType(type)
-          return (
-            <MapOverlay
-              key={type}
-              iconType={iconType}
-              type={questionTitles[type]}
-              layerIndex={index}
-              filteredPins={filteredPins}
-              initialPopupPin={filteredPins.find(
-                (pin) => pin.id === initialEntityUuid
-              )}
-              setSelectedPin={setSelectedPin}
-              setHighlightTarget={setHighlightTarget}
-              period={period}
-              activeTimestamp={activeTimestamp}
-            />
-          )
-        })}
-      </LayersControl>
-      {onPopupClose && <OnPopupClose onPopupClose={onPopupClose} />}
-      {currentPosition && (
-        <Marker position={currentPosition} icon={currentPositionIcon}></Marker>
-      )}
-      {highlightTarget && setHighlightTarget && (
-        <HighlightListener
-          highlightTarget={highlightTarget}
-          setHighlightTarget={setHighlightTarget}
+      <MapContainer
+        center={currentPosition}
+        zoom={defaultZoom}
+        scrollWheelZoom={true}
+        zoomControl={false}
+        maxBounds={maxBounds}
+        maxBoundsViscosity={maxBoundsViscosity}
+      >
+        {setSelectedLayers && (
+          <SelectedLayers setSelectedLayers={setSelectedLayers} />
+        )}
+        {setBounds && <Bounds setBounds={setBounds} />}
+        <MoveToCurrentPositionButton />
+        <ZoomControl position={'bottomleft'} />
+        <TileLayer
+          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={18}
+          minZoom={5}
         />
+        <LayersControl position="topright">
+          {HAPPINESS_KEYS.map((type, index) => {
+            const filteredPins = filteredPinsByType(type)
+            return (
+              <MapOverlay
+                key={type}
+                iconType={iconType}
+                type={questionTitles[type]}
+                layerIndex={index}
+                filteredPins={filteredPins}
+                initialPopupPin={filteredPins.find(
+                  (pin) => pin.id === initialEntityUuid
+                )}
+                setSelectedPin={setSelectedPin}
+                setHighlightTarget={setHighlightTarget}
+                period={period}
+                activeTimestamp={activeTimestamp}
+              />
+            )
+          })}
+        </LayersControl>
+        {onPopupClose && <OnPopupClose onPopupClose={onPopupClose} />}
+        {currentPosition && (
+          <Marker position={currentPosition} icon={currentPositionIcon}></Marker>
+        )}
+        {highlightTarget && setHighlightTarget && (
+          <HighlightListener
+            highlightTarget={highlightTarget}
+            setHighlightTarget={setHighlightTarget}
+          />
+        )}
+      </MapContainer>
+      {iconType === 'pin' ? (
+        <MeModal data={selectedPin} onClose={() => setSelectedPin(null)} />
+      ) : (
+        <AllModal data={selectedPin} onClose={() => setSelectedPin(null)} />
       )}
-    </MapContainer>
-    <DetailModal data={selectedPin} onClose={() => setSelectedPin(null)} />
     </>
   )
 }
