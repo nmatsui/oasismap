@@ -16,6 +16,7 @@ describe('CreateHappinessDto', () => {
         happiness5: 1,
         happiness6: 0,
       },
+      timestamp: '2024-12-19T09:00:00.000Z',
     };
     const CreateHappinessObject = plainToInstance(
       CreateHappinessDto,
@@ -24,6 +25,56 @@ describe('CreateHappinessDto', () => {
     const errors = await validate(CreateHappinessObject);
 
     expect(errors.length).toBe(0);
+  });
+
+  it('should succeed in validation when not all happiness values are zero and not timestamp', async () => {
+    const requestParam: CreateHappinessDto = {
+      latitude: 35.629327,
+      longitude: 139.72382,
+      memo: 'ダミーメモ',
+      answers: {
+        happiness1: 1,
+        happiness2: 0,
+        happiness3: 1,
+        happiness4: 1,
+        happiness5: 1,
+        happiness6: 0,
+      },
+    };
+    const CreateHappinessObject = plainToInstance(
+      CreateHappinessDto,
+      requestParam,
+    );
+    const errors = await validate(CreateHappinessObject);
+
+    expect(errors.length).toBe(0);
+  });
+
+  it('should fail validation when invalid timestamp', async () => {
+    const requestParam: CreateHappinessDto = {
+      latitude: 35.629327,
+      longitude: 139.72382,
+      memo: 'ダミーメモ',
+      answers: {
+        happiness1: 1,
+        happiness2: 0,
+        happiness3: 1,
+        happiness4: 1,
+        happiness5: 1,
+        happiness6: 0,
+      },
+      timestamp: '2024/12/19T09:00:00.000Z',
+    };
+    const CreateHappinessObject = plainToInstance(
+      CreateHappinessDto,
+      requestParam,
+    );
+    const errors = await validate(CreateHappinessObject);
+
+    expect(errors.length).toBe(1);
+    expect(errors[0].constraints).toEqual({
+      isIso8601: 'timestamp must be a valid ISO 8601 date string',
+    });
   });
 
   it('should fail validation when all happiness values are zero', async () => {
