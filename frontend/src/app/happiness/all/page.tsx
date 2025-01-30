@@ -74,6 +74,7 @@ const HappinessAll: React.FC = () => {
   }
 
   const getData = async () => {
+    if (isLoading) return
     try {
       setIsLoading(true)
       willStop.current = false
