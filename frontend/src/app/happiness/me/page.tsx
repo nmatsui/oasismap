@@ -27,23 +27,57 @@ import { useFetchData } from '@/libs/fetch'
 import { toDateTime } from '@/libs/date-converter'
 import { useTokenFetchStatus } from '@/hooks/token-fetch-status'
 import { happinessSet } from '@/types/happiness-set'
+import { HighlightTarget } from '@/types/highlight-target'
 import { Pin } from '@/types/pin'
 import { LoadingContext } from '@/contexts/loading-context'
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
 
+function getSnackbarMessage(xAxisValue: number, period: PeriodType) {
+  const date = new Date()
+  let nowYear = date.getFullYear()
+  let nowMonthIndex = date.getMonth()
+  let nowMonth = nowMonthIndex + 1
+  let nowDate = date.getDate()
+  const nowHour = date.getHours()
+  if (xAxisValue < 0) {
+    return ''
+  }
+
+  switch (period) {
+    case PeriodType.Month:
+      // 現在の月数よりも大きい値の月数が指定された場合、指定された月は去年である
+      if (nowMonth < xAxisValue) nowYear -= 1
+      return `${nowYear}年${xAxisValue}月`
+
+    case PeriodType.Day:
+      // 現在の日数よりも大きい値の日数が指定された場合、指定された日にちは先月である
+      if (nowDate < xAxisValue) nowMonthIndex -= 1
+      return `${nowYear}年${nowMonth}月${xAxisValue}日`
+
+    case PeriodType.Time:
+      // 現在の時間よりも大きい値の時間が指定された場合、指定された時間は昨日である
+      if (nowHour < xAxisValue) nowDate -= 1
+      return `${nowYear}年${nowMonth}月${nowDate}日${xAxisValue}時`
+  }
+}
+
 const HappinessMe: React.FC = () => {
   const noticeMessageContext = useContext(messageContext)
   const router = useRouter()
   const [period, setPeriod] = useState(PeriodType.Month)
-  const [pinData, setPinData] = useState<any>([])
+  const [pinData, setPinData] = useState<Pin[]>([])
   const [entityByEntityId, setEntityByEntityId] = useState<EntityByEntityId>({})
   const willStop = useRef(false)
   const isMounted = useRef(false)
-  const [MyHappiness, setMyHappiness] = useState<any>([])
+  const [MyHappiness, setMyHappiness] = useState<happinessSet>({
+    month: [],
+    day: [],
+    time: [],
+  })
   const { isTokenFetched } = useTokenFetchStatus()
   const searchParams = useSearchParams()
-  const initialEntityId = searchParams.get('entityId')
+  const searchEntityId = searchParams.get('entityId')
   const timestamp = searchParams.get('timestamp')
   const { startProps, endProps, updatedPeriod } = useDateTimeProps(
     period,
@@ -54,13 +88,25 @@ const HappinessMe: React.FC = () => {
   const { fetchData } = useFetchData()
   const [isLoaded, setIsLoaded] = useState(false)
 
+  const [highlightTarget, setHighlightTarget] = useState<HighlightTarget>({
+    lastUpdateBy: 'init',
+    xAxisValue: null,
+  })
+  const [initialEntityId, setInitialEntityId] = useState<
+    string | null | undefined
+  >(undefined)
+  if (searchEntityId && initialEntityId === undefined) {
+    setInitialEntityId(searchEntityId)
+  }
+
   const getData = async () => {
     try {
       setIsLoading(true)
       willStop.current = false
       setPinData([])
-      setMyHappiness([])
+      setMyHappiness({ month: [], day: [], time: [] })
       setEntityByEntityId({})
+      setHighlightTarget({ lastUpdateBy: 'init', xAxisValue: null })
 
       const url = backendUrl + '/api/happiness/me'
       const startDateTime = toDateTime(startProps.value).toISO()
@@ -177,6 +223,16 @@ const HappinessMe: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTokenFetched, updatedPeriod])
 
+  useEffect(() => {
+    if (highlightTarget.xAxisValue && highlightTarget.xAxisValue > 0) {
+      noticeMessageContext.showMessage(
+        `${getSnackbarMessage(highlightTarget.xAxisValue, period)}のデータをハイライトします`,
+        MessageType.Success
+      )
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightTarget.xAxisValue])
+
   const renderCustomDayTick = (tickProps: any) => {
     const { x, y, payload } = tickProps
     const hour = payload.value
@@ -207,10 +263,14 @@ const HappinessMe: React.FC = () => {
           pinData={pinData}
           initialEntityId={initialEntityId}
           entityByEntityId={entityByEntityId}
-          onPopupClose={() =>
+          onPopupClose={() => {
             // 画面遷移時に発火させないため、マウント時のみクエリパラメータの削除を実行
             isMounted.current && router.replace('/happiness/me')
-          }
+            setInitialEntityId(null)
+          }}
+          period={period}
+          highlightTarget={highlightTarget}
+          setHighlightTarget={setHighlightTarget}
         />
       </Grid>
       <Grid
@@ -238,6 +298,8 @@ const HappinessMe: React.FC = () => {
               color={graphColors}
               xTickFormatter={renderCustomDayTick}
               isLoaded={isLoaded}
+              highlightTarget={highlightTarget}
+              setHighlightTarget={setHighlightTarget}
             />
           </ResponsiveContainer>
         </Grid>
