@@ -1,6 +1,6 @@
 import { ControllablePopup } from './controllablePopup'
 import { mapColors } from '@/theme/color'
-import { questionTitles } from './map'
+import { questionTitles } from '@/libs/constants'
 import { Pin } from '@/types/pin'
 import { HappinessTitle } from '../happiness/happiness-title'
 

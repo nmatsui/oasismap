@@ -8,10 +8,11 @@ import {
   LayerGroup,
   useMapEvents,
 } from 'react-leaflet'
-import { LatLngTuple, divIcon } from 'leaflet'
 import React, { useState, useEffect, useContext } from 'react'
+import { LatLng, LatLngTuple, LatLngBounds, divIcon } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getIconByType } from '../utils/icon'
+import { HappinessKey } from '@/types/happiness-key'
 import { IconType } from '@/types/icon-type'
 import { EntityByEntityId } from '@/types/entityByEntityId'
 import { IconButton } from '@mui/material'
@@ -20,7 +21,7 @@ import CurrentPositionIcon from '@mui/icons-material/RadioButtonChecked'
 import { renderToString } from 'react-dom/server'
 import { DetailModal } from '../happiness/detailModal'
 import { Pin } from '@/types/pin'
-import { questionTitles } from '@/libs/constants'
+import { HAPPINESS_KEYS, questionTitles } from '@/libs/constants'
 import { MePopup } from './mePopup'
 import { AllPopup } from './allPopup'
 import { MessageType } from '@/types/message-type'
@@ -46,6 +47,8 @@ const defaultZoom = loadEnvAsNumber(
   String(process.env.NEXT_PUBLIC_MAP_DEFAULT_ZOOM),
   15
 )
+const maxBounds = new LatLngBounds(new LatLng(-90, -180), new LatLng(90, 180))
+const maxBoundsViscosity = 1.0
 
 type Props = {
   pointEntities: any[]
@@ -57,6 +60,8 @@ type Props = {
   iconType: IconType
   pinData: any[]
   initialEntityId?: string | null
+  setSelectedLayers?: React.Dispatch<React.SetStateAction<HappinessKey[]>>
+  setBounds?: React.Dispatch<React.SetStateAction<LatLngBounds | undefined>>
   entityByEntityId?: EntityByEntityId
   onPopupClose?: () => void
 }
@@ -75,8 +80,6 @@ const OnPopupClose = ({ onPopupClose }: { onPopupClose: () => void }) => {
   })
   return null
 }
-
-export { questionTitles }
 
 const MapOverlay = ({
   iconType,
@@ -117,10 +120,62 @@ const MapOverlay = ({
   </LayersControl.Overlay>
 )
 
+const SelectedLayers = ({
+  setSelectedLayers,
+}: {
+  setSelectedLayers: React.Dispatch<React.SetStateAction<HappinessKey[]>>
+}) => {
+  useMapEvents({
+    overlayadd: (e) => {
+      const targetLayer = HAPPINESS_KEYS.find(
+        (key) => questionTitles[key] === e.name
+      )
+      if (targetLayer) {
+        setSelectedLayers((selectedLayers: HappinessKey[]) => [
+          ...selectedLayers,
+          targetLayer,
+        ])
+      }
+    },
+    overlayremove: (e) => {
+      const targetLayer = HAPPINESS_KEYS.find(
+        (key) => questionTitles[key] === e.name
+      )
+      if (targetLayer) {
+        setSelectedLayers((selectedLayers: HappinessKey[]) =>
+          [...selectedLayers].filter((layer) => layer !== targetLayer)
+        )
+      }
+    },
+  })
+  return null
+}
+
+const Bounds = ({
+  setBounds,
+}: {
+  setBounds: React.Dispatch<React.SetStateAction<LatLngBounds | undefined>>
+}) => {
+  const map = useMap()
+
+  useEffect(() => {
+    setBounds(map.getBounds())
+  }, [setBounds, map])
+
+  useMapEvents({
+    moveend: () => {
+      setBounds(map.getBounds())
+    },
+  })
+  return null
+}
+
 const Map: React.FC<Props> = ({
   iconType,
   pinData,
   initialEntityId,
+  setSelectedLayers,
+  setBounds,
   entityByEntityId,
   onPopupClose,
 }) => {
@@ -239,7 +294,13 @@ const Map: React.FC<Props> = ({
         zoom={defaultZoom}
         scrollWheelZoom={true}
         zoomControl={false}
+        maxBounds={maxBounds}
+        maxBoundsViscosity={maxBoundsViscosity}
       >
+        {setSelectedLayers && (
+          <SelectedLayers setSelectedLayers={setSelectedLayers} />
+        )}
+        {setBounds && <Bounds setBounds={setBounds} />}
         <MoveToCurrentPositionButton />
         <ZoomControl position={'bottomleft'} />
         <TileLayer
@@ -249,7 +310,7 @@ const Map: React.FC<Props> = ({
           minZoom={5}
         />
         <LayersControl position="topright">
-          {Object.keys(questionTitles).map((type, index) => {
+          {HAPPINESS_KEYS.map((type, index) => {
             const filteredPins = filteredPinsByType(type)
             return (
               <MapOverlay
