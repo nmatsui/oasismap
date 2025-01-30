@@ -27,7 +27,7 @@ import { useFetchData } from '@/libs/fetch'
 import { toDateTime } from '@/libs/date-converter'
 import { useTokenFetchStatus } from '@/hooks/token-fetch-status'
 import { happinessSet } from '@/types/happiness-set'
-import { HighlightTarget } from '@/types/highlightTarget'
+import { HighlightTarget } from '@/types/highlight-target'
 import { Pin } from '@/types/pin'
 import { LoadingContext } from '@/contexts/loading-context'
 
@@ -193,6 +193,45 @@ const HappinessMe: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTokenFetched, updatedPeriod])
+
+  function getSnackbarMessage(xAxisValue: number, period: PeriodType) {
+    const date = new Date()
+    let nowYear = date.getFullYear()
+    let nowMonthIndex = date.getMonth()
+    let nowMonth = nowMonthIndex + 1
+    let nowDate = date.getDate()
+    const nowHour = date.getHours()
+    if (xAxisValue < 0) {
+      return ''
+    }
+
+    switch (period) {
+      case PeriodType.Month:
+        // 現在の月数よりも大きい値の月数が指定された場合、指定された月は去年である
+        if (nowMonth < xAxisValue) nowYear -= 1
+        return `${nowYear}年${xAxisValue}月`
+
+      case PeriodType.Day:
+        // 現在の日数よりも大きい値の日数が指定された場合、指定された日にちは先月である
+        if (nowDate < xAxisValue) nowMonthIndex -= 1
+        return `${nowYear}年${nowMonth}月${xAxisValue}日`
+
+      case PeriodType.Time:
+        // 現在の時間よりも大きい値の時間が指定された場合、指定された時間は昨日である
+        if (nowHour < xAxisValue) nowDate -= 1
+        return `${nowYear}年${nowMonth}月${nowDate}日${xAxisValue}時`
+    }
+  }
+
+  useEffect(() => {
+    if (highlightTarget.xAxisValue && 0 < highlightTarget.xAxisValue) {
+      noticeMessageContext.showMessage(
+        `${getSnackbarMessage(highlightTarget.xAxisValue, period)}のデータをハイライトします`,
+        MessageType.Success
+      )
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightTarget.xAxisValue])
 
   const renderCustomDayTick = (tickProps: any) => {
     const { x, y, payload } = tickProps

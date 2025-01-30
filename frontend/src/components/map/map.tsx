@@ -13,7 +13,7 @@ import { LatLng, LatLngTuple, LatLngBounds, divIcon } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getIconByType } from '../utils/icon'
 import { IconType } from '@/types/icon-type'
-import { messageContext, MessagesContextType } from '@/contexts/message-context'
+import { messageContext } from '@/contexts/message-context'
 import { EntityByEntityId } from '@/types/entityByEntityId'
 import { IconButton } from '@mui/material'
 import MyLocationIcon from '@mui/icons-material/MyLocation'
@@ -25,7 +25,7 @@ import { HAPPINESS_KEYS, questionTitles } from '@/libs/constants'
 import { MePopup } from './mePopup'
 import { AllPopup } from './allPopup'
 import { MessageType } from '@/types/message-type'
-import { HighlightTarget } from '@/types/highlightTarget'
+import { HighlightTarget } from '@/types/highlight-target'
 import { HappinessKey } from '@/types/happiness-key'
 import { PeriodType } from '@/types/period'
 
@@ -72,34 +72,20 @@ type Props = {
 }
 
 const HighlightListener = ({
-  period,
   highlightTarget,
   setHighlightTarget,
-  noticeMessageContext,
 }: {
-  period?: PeriodType
   highlightTarget: HighlightTarget
   setHighlightTarget: React.Dispatch<React.SetStateAction<HighlightTarget>>
-  noticeMessageContext: MessagesContextType
 }) => {
   // グラフクリックによってハイライト状態が変更された場合はポップアップを閉じる
   const map = useMap()
-  if (highlightTarget && highlightTarget.lastUpdateBy === 'Graph') {
-    map.closePopup()
 
-    // グラフクリックによってハイライトされた場合はスナックバーで通知する
-    if (highlightTarget.xAxisValue && period) {
-      noticeMessageContext.showMessage(
-        `${getSnackbarMessage(highlightTarget.xAxisValue, period)}のデータをハイライトします`,
-        MessageType.Success
-      )
+  useEffect(() => {
+    if (highlightTarget.lastUpdateBy === 'Graph') {
+      map.closePopup()
     }
-
-    // スナックバーを表示し続けないために、必要な処理を行ったら更新する
-    setHighlightTarget((highlightTarget) => {
-      return { lastUpdateBy: 'Map', xAxisValue: highlightTarget.xAxisValue }
-    })
-  }
+  }, [highlightTarget.lastUpdateBy, map])
 
   // マップ上のpin以外の箇所をクリックした場合、全体のハイライトを解除
   useMapEvents({
@@ -198,35 +184,6 @@ const convertToTimestampRange = (
   }
 }
 
-function getSnackbarMessage(xAxisValue: number, period: PeriodType) {
-  const date = new Date()
-  let nowYear = date.getFullYear()
-  let nowMonthIndex = date.getMonth()
-  let nowMonth = nowMonthIndex + 1
-  let nowDate = date.getDate()
-  const nowHour = date.getHours()
-  if (xAxisValue < 0) {
-    return ''
-  }
-
-  switch (period) {
-    case PeriodType.Month:
-      // 現在の月数よりも大きい値の月数が指定された場合、指定された月は去年である
-      if (nowMonth < xAxisValue) nowYear -= 1
-      return `${nowYear}年${xAxisValue}月`
-
-    case PeriodType.Day:
-      // 現在の日数よりも大きい値の日数が指定された場合、指定された日にちは先月である
-      if (nowDate < xAxisValue) nowMonthIndex -= 1
-      return `${nowYear}年${nowMonth}月${xAxisValue}日`
-
-    case PeriodType.Time:
-      // 現在の時間よりも大きい値の時間が指定された場合、指定された時間は昨日である
-      if (nowHour < xAxisValue) nowDate -= 1
-      return `${nowYear}年${nowMonth}月${nowDate}日${xAxisValue}時`
-  }
-}
-
 const MapOverlay = ({
   iconType,
   type,
@@ -237,7 +194,6 @@ const MapOverlay = ({
   setHighlightTarget,
   period,
   activeTimestamp,
-  noticeMessageContext,
 }: {
   iconType: IconType
   type: string
@@ -248,7 +204,6 @@ const MapOverlay = ({
   setHighlightTarget?: React.Dispatch<React.SetStateAction<HighlightTarget>>
   period?: PeriodType
   activeTimestamp: { start: Date; end: Date } | null
-  noticeMessageContext: MessagesContextType
 }) => (
   <LayersControl.Overlay checked name={type}>
     <LayerGroup>
@@ -266,19 +221,13 @@ const MapOverlay = ({
           eventHandlers={{
             click: () => {
               if (!setHighlightTarget || !period) return
-              setHighlightTarget((highlightTarget) => {
+              setHighlightTarget((highlightTarget: HighlightTarget) => {
                 const newXAxisValue = convertToXAxisValue(pin, period)
                 // ハイライト中のピンをクリックした場合は何もしない。
                 // => 全体のハイライト解除はグラフクリックによって行う。
                 if (highlightTarget.xAxisValue === newXAxisValue) {
                   return highlightTarget
                 } else {
-                  if (newXAxisValue && newXAxisValue !== -1) {
-                    noticeMessageContext.showMessage(
-                      `${getSnackbarMessage(newXAxisValue, period)}のデータをハイライトします`,
-                      MessageType.Success
-                    )
-                  }
                   return { lastUpdateBy: 'Map', xAxisValue: newXAxisValue }
                 }
               })
@@ -514,7 +463,6 @@ const Map: React.FC<Props> = ({
               setHighlightTarget={setHighlightTarget}
               period={period}
               activeTimestamp={activeTimestamp}
-              noticeMessageContext={noticeMessageContext}
             />
           )
         })}
@@ -525,10 +473,8 @@ const Map: React.FC<Props> = ({
       )}
       {highlightTarget && setHighlightTarget && (
         <HighlightListener
-          period={period}
           highlightTarget={highlightTarget}
           setHighlightTarget={setHighlightTarget}
-          noticeMessageContext={noticeMessageContext}
         />
       )}
     </MapContainer>

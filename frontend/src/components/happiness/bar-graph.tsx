@@ -24,9 +24,22 @@ const BarGraph = (props: any) => {
   } = props
   const isEmptyData = !plotdata || plotdata.length === 0
 
-  const handleClick = (data: any) => {
-    const clickedHappinesObj: happinessObj = data.payload
+  const handleClick = (data: unknown) => {
+    if (
+      typeof data !== 'object' ||
+      data === null ||
+      'payload' in data === false
+    )
+      return
+    const clickedHappinesObj = data.payload
+    if (
+      typeof clickedHappinesObj !== 'object' ||
+      clickedHappinesObj === null ||
+      'timestamp' in clickedHappinesObj === false
+    )
+      return
     const barXAxisValue = Number(clickedHappinesObj.timestamp)
+
     if (highlightTarget.xAxisValue === barXAxisValue) {
       setHighlightTarget({ lastUpdateBy: 'Graph', xAxisValue: null })
     } else {
