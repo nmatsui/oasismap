@@ -213,6 +213,12 @@ export class HappinessAllService {
               HappinessAllService.keys[5],
             ),
           },
+          memos: entity.happinessEntities.map((entity) => {
+            return {
+              timestamp: entity.timestamp.value,
+              memo: entity.memo.value,
+            };
+          }),
         };
       });
       map_data[entity.gridKey] = {
