@@ -170,7 +170,7 @@ describe('AppController (e2e)', () => {
       .get('/api/happiness/me')
       .query({
         start: '2025-01-01T00:00:00.000000Z',
-        end: '2025-01-31T23:59:59.999999Z',
+        end: '2125-01-31T23:59:59.999999Z',
       });
 
     expect(response.body).toHaveProperty('count');
