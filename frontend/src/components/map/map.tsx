@@ -456,8 +456,8 @@ const Map: React.FC<Props> = ({
         )}
         {setBounds && <Bounds setBounds={setBounds} />}
         <MoveToCurrentPositionControl />
+        <ZoomControl position={'bottomleft'} />
         <LayersControl position="topleft">
-          <ZoomControl position={'bottomleft'} />
           <LayersControl.BaseLayer checked name="標準地図">
             <TileLayer
               attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
