@@ -445,7 +445,7 @@ const Map: React.FC<Props> = ({
   return (
     <>
       <MapContainer
-        center={currentPosition}
+        center={center}
         zoom={defaultZoom}
         scrollWheelZoom={true}
         zoomControl={false}
