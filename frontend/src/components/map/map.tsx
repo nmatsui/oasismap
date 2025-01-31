@@ -416,8 +416,7 @@ const Map: React.FC<Props> = ({
       return () => {
         control.remove()
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [map, currentPosition, defaultZoom])
+    }, [map])
 
     return null
   }
