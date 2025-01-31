@@ -384,7 +384,7 @@ const Map: React.FC<Props> = ({
     const map = useMap()
 
     useEffect(() => {
-      const control: L.Control = new L.Control({ position: 'topleft' })
+      const control: L.Control = new L.Control({ position: 'bottomright' })
 
       control.onAdd = () => {
         const div = L.DomUtil.create('div', 'leaflet-control-custom')
@@ -457,12 +457,24 @@ const Map: React.FC<Props> = ({
         {setBounds && <Bounds setBounds={setBounds} />}
         <MoveToCurrentPositionControl />
         <ZoomControl position={'bottomleft'} />
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={18}
-          minZoom={5}
-        />
+        <LayersControl position="topleft">
+          <LayersControl.BaseLayer checked name="標準地図">
+            <TileLayer
+              attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxZoom={18}
+              minZoom={5}
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="淡色地図">
+            <TileLayer
+              attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">出典：地理院タイル</a>'
+              url="https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png"
+              maxZoom={18}
+              minZoom={5}
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl>
         <LayersControl position="topright">
           {HAPPINESS_KEYS.map((type, index) => {
             const filteredPins = filteredPinsByType(type)
@@ -486,10 +498,7 @@ const Map: React.FC<Props> = ({
         </LayersControl>
         {onPopupClose && <OnPopupClose onPopupClose={onPopupClose} />}
         {currentPosition && (
-          <Marker
-            position={currentPosition}
-            icon={currentPositionIcon}
-          ></Marker>
+          <Marker position={currentPosition} icon={currentPositionIcon} />
         )}
         {highlightTarget && setHighlightTarget && (
           <HighlightListener
