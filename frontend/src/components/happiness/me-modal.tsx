@@ -29,7 +29,7 @@ export const MeModal: React.FC<MeModalProps> = ({ onClose, data }) => {
           border: '2px solid #000',
           boxShadow: 24,
           p: 4,
-          width: { xs: '90%' },
+          width: { xs: '90%', sm: 'auto' },
         }}
       >
         <>
