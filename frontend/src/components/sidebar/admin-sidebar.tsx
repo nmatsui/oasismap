@@ -82,6 +82,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = (props) => {
               <ListItemText primary="データのインポート" />
             </ListItemButton>
           </ListItem>
+          <ListItem key="license" disablePadding>
+            <ListItemButton
+              onClick={() => router.push('/terms/third-party-license')}
+            >
+              <ListItemText primary="サードパーティライセンス" />
+            </ListItemButton>
+          </ListItem>
           <ListItem key="logout" disablePadding>
             <ListItemButton onClick={() => signOut({ callbackUrl: '/login' })}>
               <ListItemText primary="ログアウト" />

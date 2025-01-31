@@ -384,7 +384,7 @@ const Map: React.FC<Props> = ({
     const map = useMap()
 
     useEffect(() => {
-      const control: L.Control = new L.Control({ position: 'topleft' })
+      const control: L.Control = new L.Control({ position: 'bottomright' })
 
       control.onAdd = () => {
         const div = L.DomUtil.create('div', 'leaflet-control-custom')
@@ -468,7 +468,7 @@ const Map: React.FC<Props> = ({
           </LayersControl.BaseLayer>
           <LayersControl.BaseLayer name="淡色地図">
             <TileLayer
-              attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">出典：地理院タイル「Shoreline data is derived from: United States. National Imagery and Mapping Agency. "Vector Map Level 0 (VMAP0)." Bethesda, MD: Denver, CO: The Agency; USGS Information Services, 1997.」</a>'
+              attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">出典：地理院タイル</a>'
               url="https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png"
               maxZoom={18}
               minZoom={5}
