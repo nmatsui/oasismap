@@ -97,6 +97,12 @@ services:
       - ./site/mongo/configdb:/data/configdb
     networks:
       - backend-network
+    healthcheck:
+      test: "mongosh mongodb://${MONGOUSERNAME}:${MONGOPASSWORD}@mongo:27017/admin?authSource=admin --quiet --eval \"db.runCommand('ping')\""
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     restart: always
 
   postgres:
