@@ -10,6 +10,8 @@ import {
 } from 'react-leaflet'
 import React, { useState, useEffect, useContext } from 'react'
 import { LatLng, LatLngTuple, LatLngBounds, divIcon } from 'leaflet'
+import L from 'leaflet'
+import { createRoot } from 'react-dom/client'
 import 'leaflet/dist/leaflet.css'
 import { getIconByType } from '../utils/icon'
 import { IconType } from '@/types/icon-type'
@@ -378,31 +380,45 @@ const Map: React.FC<Props> = ({
     iconAnchor: [10, 10],
   })
 
-  const MoveToCurrentPositionButton = () => {
+  const MoveToCurrentPositionControl = () => {
     const map = useMap()
-    const moveToCurrentPosition = () => {
-      if (currentPosition) {
-        map.flyTo(currentPosition, defaultZoom)
+
+    useEffect(() => {
+      const control: L.Control = new L.Control({ position: 'bottomright' })
+
+      control.onAdd = () => {
+        const div = L.DomUtil.create('div', 'leaflet-control-custom')
+
+        const root = createRoot(div)
+        root.render(
+          <IconButton
+            style={{
+              backgroundColor: '#f7f7f7',
+              border: '1px solid #ccc',
+              borderRadius: 2,
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
+            }}
+            onClick={() => {
+              if (currentPosition) {
+                map.flyTo(currentPosition, defaultZoom)
+              }
+            }}
+          >
+            <MyLocationIcon style={{ color: 'blue' }} />
+          </IconButton>
+        )
+
+        return div
       }
-    }
-    return (
-      <IconButton
-        style={{
-          top: '2%',
-          left: '2%',
-          width: '35px',
-          height: '35px',
-          backgroundColor: '#f7f7f7',
-          border: '1px solid #ccc',
-          zIndex: 1000,
-          borderRadius: 2,
-          boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
-        }}
-        onClick={moveToCurrentPosition}
-      >
-        <MyLocationIcon style={{ color: 'blue' }} />
-      </IconButton>
-    )
+
+      control.addTo(map)
+
+      return () => {
+        control.remove()
+      }
+    }, [map])
+
+    return null
   }
   if (error) {
     console.error('Error: Unable to get current position.', error)
@@ -428,7 +444,7 @@ const Map: React.FC<Props> = ({
   return (
     <>
       <MapContainer
-        center={currentPosition}
+        center={center}
         zoom={defaultZoom}
         scrollWheelZoom={true}
         zoomControl={false}
@@ -439,14 +455,26 @@ const Map: React.FC<Props> = ({
           <SelectedLayers setSelectedLayers={setSelectedLayers} />
         )}
         {setBounds && <Bounds setBounds={setBounds} />}
-        <MoveToCurrentPositionButton />
+        <MoveToCurrentPositionControl />
         <ZoomControl position={'bottomleft'} />
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={18}
-          minZoom={5}
-        />
+        <LayersControl position="topleft">
+          <LayersControl.BaseLayer checked name="標準地図">
+            <TileLayer
+              attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxZoom={18}
+              minZoom={5}
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="淡色地図">
+            <TileLayer
+              attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">出典：地理院タイル</a>'
+              url="https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png"
+              maxZoom={18}
+              minZoom={5}
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl>
         <LayersControl position="topright">
           {HAPPINESS_KEYS.map((type, index) => {
             const filteredPins = filteredPinsByType(type)
@@ -470,7 +498,7 @@ const Map: React.FC<Props> = ({
         </LayersControl>
         {onPopupClose && <OnPopupClose onPopupClose={onPopupClose} />}
         {currentPosition && (
-          <Marker position={currentPosition} icon={currentPositionIcon}></Marker>
+          <Marker position={currentPosition} icon={currentPositionIcon} />
         )}
         {highlightTarget && setHighlightTarget && (
           <HighlightListener
