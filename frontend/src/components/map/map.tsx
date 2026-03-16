@@ -42,6 +42,7 @@ import { MeModal } from '../happiness/me-modal'
 import { Pin } from '@/types/pin'
 import { HAPPINESS_KEYS, PROFILE_TYPE } from '@/libs/constants'
 import { MePopup } from './mePopup'
+import { handleTileError } from '@/components/utils/tile-fallback-log'
 import { MessageType } from '@/types/message-type'
 import { HappinessKey } from '@/types/happiness-key'
 
@@ -443,6 +444,7 @@ const Map: React.FC<Props> = ({
   const [error, setError] = useState<Error | null>(null)
   const [selectedPin, setSelectedPin] = useState<Pin | null>(null)
   const noticeMessageContext = useContext(messageContext)
+  const [useFallback, setUseFallback] = useState(false)
 
   useEffect(() => {
     // geolocation が http に対応していないため固定値を設定
@@ -623,12 +625,25 @@ const Map: React.FC<Props> = ({
       >
         <AddHappinessControl />
         <MoveToCurrentPositionControl />
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={18}
-          minZoom={5}
-        />
+        {!useFallback && (
+          <TileLayer
+            attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxZoom={18}
+            minZoom={5}
+            eventHandlers={{
+              tileerror: () => handleTileError(setUseFallback),
+            }}
+          />
+        )}
+        {useFallback && (
+          <TileLayer
+            attribution='&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>'
+            url="https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png"
+            maxZoom={18}
+            minZoom={5}
+          />
+        )}
         <HybridClusterGroup
           pinData={pinData}
           setSelectedPin={setSelectedPin}
