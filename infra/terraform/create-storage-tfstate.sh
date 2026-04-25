@@ -42,16 +42,16 @@ az_ignore_not_found() {
   echo "$output"
 }
 
-# Azure CLI を使用して、tfstate を保存するリソースグループを作成する
+# Azure CLIを使用してAzureへログインする
 az login --tenant "${AZURE_TENANT_ID}" ||
   (echo "Failed to login to Azure" >&2 && exit 1)
 
+# Azure CLIを使用してリソースグループを作成する
 resource_group_exists=$(az_ignore_not_found az group show --name "${TF_STATE_RESOURCE_GROUP_NAME}")
 if [ -z "$resource_group_exists" ]; then
   az group create --name "${TF_STATE_RESOURCE_GROUP_NAME}" --location "${TF_STATE_LOCATION}"
 fi
 
-# Azure CLI を使用して、tfstate を保存するストレージアカウントを作成する
 # リソースグループ名から MD5 ハッシュを生成し、ストレージ名の suffix として使用する
 STORAGE_ACCOUNT_NAME_SUFFIX=$(echo -n "${TF_STATE_RESOURCE_GROUP_NAME}" | md5sum | cut -d' ' -f1)
 
@@ -82,15 +82,14 @@ generated_storage_account_name() {
 }
 STORAGE_ACCOUNT_NAME=$(generated_storage_account_name "${TF_STATE_PREFIX}" "${STORAGE_ACCOUNT_NAME_SUFFIX}")
 
-# Azure CLI を使用して、ストレージアカウントを作成する
+# Azure CLI を使用して、tfstate を保存するストレージアカウントを作成する
 az storage account create \
   --name "${STORAGE_ACCOUNT_NAME}" \
   --resource-group "${TF_STATE_RESOURCE_GROUP_NAME}" \
   --location "${TF_STATE_LOCATION}" \
   --sku "Standard_LRS" \
   --kind "StorageV2" \
-  --enable-https-traffic-only "true" \
-  --allow-nested-items-to-be-public "false" \
+  --allow-blob-public-access "false" \
   --min-tls-version "TLS1_2" \
   --https-only "true" ||
   (echo "Failed to create storage account" >&2 && exit 1)
