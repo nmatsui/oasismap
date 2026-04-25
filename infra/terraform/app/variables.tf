@@ -19,7 +19,7 @@ variable "prefix" {
 variable "location" {
   description = "Azure region (must match platform)."
   type        = string
-  default     = "japaneast"
+  default     = "japanwest"
 }
 
 # --- App Service プラン ---

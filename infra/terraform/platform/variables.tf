@@ -13,7 +13,7 @@ variable "prefix" {
 variable "location" {
   description = "Azure region for resources."
   type        = string
-  default     = "japaneast"
+  default     = "japanwest"
 }
 
 # --- VNet ---
