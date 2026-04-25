@@ -3,7 +3,7 @@
 # FQDN は Application Gateway のバックエンドで使用する。
 
 resource "azurerm_linux_web_app" "frontend" {
-  name                            = var.app_frontend_name
+  name                            = "${var.prefix}-${var.app_frontend_name}-${substr(md5(data.terraform_remote_state.platform.outputs.resource_group_name), 0, 8)}"
   location                        = var.location
   resource_group_name             = data.terraform_remote_state.platform.outputs.resource_group_name
   service_plan_id                 = azurerm_service_plan.main.id
@@ -55,7 +55,7 @@ resource "azurerm_linux_web_app" "frontend" {
 }
 
 resource "azurerm_linux_web_app" "backend" {
-  name                            = var.app_backend_name
+  name                            = "${var.prefix}-${var.app_backend_name}-${substr(md5(data.terraform_remote_state.platform.outputs.resource_group_name), 0, 8)}"
   location                        = var.location
   resource_group_name             = data.terraform_remote_state.platform.outputs.resource_group_name
   service_plan_id                 = azurerm_service_plan.main.id
@@ -109,7 +109,7 @@ resource "azurerm_linux_web_app" "backend" {
 }
 
 resource "azurerm_linux_web_app" "keycloak" {
-  name                            = var.app_keycloak_name
+  name                            = "${var.prefix}-${var.app_keycloak_name}-${substr(md5(data.terraform_remote_state.platform.outputs.resource_group_name), 0, 8)}"
   location                        = var.location
   resource_group_name             = data.terraform_remote_state.platform.outputs.resource_group_name
   service_plan_id                 = azurerm_service_plan.main.id
