@@ -143,3 +143,35 @@ Write-Host "Backend configuration files created:"
 Write-Host "  - $platformBackendPath"
 Write-Host "  - $appBackendPath"
 Write-Host "  - $keycloakRealmBackendPath"
+
+# 存在しない場合はplatform、app、keycloak-realmのterraform.tfvarsを作成する
+$platformTfvarsExamplePath = Join-Path $scriptDir "platform\terraform.tfvars.example"
+$appTfvarsExamplePath = Join-Path $scriptDir "app\terraform.tfvars.example"
+$keycloakRealmTfvarsExamplePath = Join-Path $scriptDir "keycloak-realm\terraform.tfvars.example"
+$platformTfvarsPath = Join-Path $scriptDir "platform\terraform.tfvars"
+$appTfvarsPath = Join-Path $scriptDir "app\terraform.tfvars"
+$keycloakRealmTfvarsPath = Join-Path $scriptDir "keycloak-realm\terraform.tfvars"
+
+if (-not (Test-Path $platformTfvarsPath)) {
+  Copy-Item $platformTfvarsExamplePath $platformTfvarsPath
+}
+
+if (-not (Test-Path $appTfvarsPath)) {
+  Copy-Item $appTfvarsExamplePath $appTfvarsPath
+}
+
+if (-not (Test-Path $keycloakRealmTfvarsPath)) {
+  Copy-Item $keycloakRealmTfvarsExamplePath $keycloakRealmTfvarsPath
+}
+
+# appとkeycloak-realmのterraform.tfvarsにtfstateの情報を書き込む
+if (Test-Path $appTfvarsPath) {
+  (Get-Content $appTfvarsPath) -replace 'backend_resource_group_name\s*=\s*".*"', "backend_resource_group_name   = `"$env:TF_STATE_RESOURCE_GROUP_NAME`"" | Set-Content $appTfvarsPath
+  (Get-Content $appTfvarsPath) -replace 'backend_storage_account_name\s*=\s*".*"', "backend_storage_account_name  = `"$storageAccountName`"" | Set-Content $appTfvarsPath
+}
+
+if (Test-Path $keycloakRealmTfvarsPath) {
+  (Get-Content $keycloakRealmTfvarsPath) -replace 'backend_resource_group_name\s*=\s*".*"', "backend_resource_group_name   = `"$env:TF_STATE_RESOURCE_GROUP_NAME`"" | Set-Content $keycloakRealmTfvarsPath
+  (Get-Content $keycloakRealmTfvarsPath) -replace 'backend_storage_account_name\s*=\s*".*"', "backend_storage_account_name  = `"$storageAccountName`"" | Set-Content $keycloakRealmTfvarsPath
+}
+

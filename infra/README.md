@@ -79,7 +79,7 @@ Terraform は次の **3 レイヤー**を **platform → app → keycloak-realm*
 
 ### 5.2. ストレージアカウントの作成
 
-1. `env.(sh|ps1).example`を`env.(sh|ps1)にコピーし、元に環境変数設定用のスクリプトを作成する。
+1. `env.(sh|ps1).example`を`env.(sh|ps1)`にコピーし、元に環境変数設定用のスクリプトを作成する。
 
    ```sh
    # macOS / Linux 向け
@@ -93,7 +93,7 @@ Terraform は次の **3 レイヤー**を **platform → app → keycloak-realm*
    cp env.ps1.example env.ps1
    ```
 
-2. env.(sh|ps1)を編集する。
+2. `env.(sh|ps1)`を編集する。
 
 3. 環境変数を読み込ませる
 
@@ -121,19 +121,21 @@ Terraform は次の **3 レイヤー**を **platform → app → keycloak-realm*
 
 5. **infra/terraform/platform**、**infra/terraform/app**、**infra/terraform/keycloak-realm**、それぞれのディレクトリに **`config.azurerm.tfbackend`** が作成されていることを確認する。
 
-6. 各レイヤーで `terraform init` 時に `-backend-config=config.azurerm.tfbackend` を渡す（後述）。
+6. **infra/terraform/platform**、**infra/terraform/app**、**infra/terraform/keycloak-realm**、それぞれのディレクトリに `terraform.tfvars.example` を雛形にして **`terraform.tfvars`** が作成されていることを確認する。
+
+7. 各レイヤーで `terraform init` 時に `-backend-config=config.azurerm.tfbackend` を渡す（後述）。
 
 `terraform.tfvars` の雛形は各レイヤーの `terraform.tfvars.example` を参照する。
 
 ## 6. 各レイヤーの変数ファイル
 
-各レイヤーで `terraform.tfvars.example` を `terraform.tfvars` にコピーし、値を編集する。
+各レイヤーで `terraform.tfvars.example` から生成された `terraform.tfvars` に定義されている変数を編集する。
 
 - [platform/terraform.tfvars.example](terraform/platform/terraform.tfvars.example)
 - [app/terraform.tfvars.example](terraform/app/terraform.tfvars.example)
 - [keycloak-realm/terraform.tfvars.example](terraform/keycloak-realm/terraform.tfvars.example)
 
-**app** と **keycloak-realm** では、state 用ストレージの `backend_resource_group_name` / `backend_storage_account_name` を **同一**に揃える（app と keycloak-realm は同じストレージアカウントの `app` コンテナを使用する）。
+**app** と **keycloak-realm** では、state 用ストレージの `backend_resource_group_name` / `backend_storage_account_name` が **自動的に設定** されている（app と keycloak-realm は同じストレージアカウントの `app` コンテナを使用する）。
 
 ### 6.1. 主要な変数の説明
 
@@ -160,8 +162,8 @@ Terraform は次の **3 レイヤー**を **platform → app → keycloak-realm*
 
 | 変数名 | 概要 | デフォルト値 |
 | --- | --- | --- |
-| backend_resource_group_name | リモート state 用リソースグループ名<br/> `app/config.azurerm.tfbackend` の `resource_group_name`を参照| |
-| backend_storage_account_name | リモート state 用ストレージアカウント名<br/> `app/config.azurerm.tfbackend` の `storage_account_name`を参照| |
+| backend_resource_group_name | リモート state 用リソースグループ名<br/> `app/config.azurerm.tfbackend` の `resource_group_name` の値を自動設定| |
+| backend_storage_account_name | リモート state 用ストレージアカウント名<br/> `app/config.azurerm.tfbackend` の `storage_account_name` の値を自動設定| |
 | prefix | リソース名の接頭辞 | |
 | location | リソースの場所<br/> `platform/terraform.tfvars` の`location` と一致させること | japanwest |
 | app_frontend_name | Frontend アプリケーション名（英数字とハイフンのみ） | |
@@ -182,8 +184,8 @@ Terraform は次の **3 レイヤー**を **platform → app → keycloak-realm*
 
 | 変数名 | 概要 | デフォルト値 |
 | --- | --- | --- |
-| backend_resource_group_name | リモート state 用リソースグループ名<br/> `keycloak-realm/config.azurerm.tfbackend` の `resource_group_name`を参照| |
-| backend_storage_account_name | リモート state 用ストレージアカウント名<br/> `keycloak-realm/config.azurerm.tfbackend` の `storage_account_name`を参照| |
+| backend_resource_group_name | リモート state 用リソースグループ名<br/> `keycloak-realm/config.azurerm.tfbackend` の `resource_group_name` の値を自動設定| |
+| backend_storage_account_name | リモート state 用ストレージアカウント名<br/> `keycloak-realm/config.azurerm.tfbackend` の `storage_account_name` の値を自動設定| |
 | app_keycloak_admin | Keycloak の管理者ユーザー名 <br/> `app/terraform.tfvars` の `app_keycloak_admin` と一致させる | |
 | app_keycloak_admin_password | Keycloak の管理者パスワード <br/> `app/terraform.tfvars` の `app_keycloak_admin_password` と一致させる| |
 | keycloak_google_client_id | Google クライアント ID | |
