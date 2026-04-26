@@ -20,7 +20,7 @@ app_keycloak_admin          = "YOUR_KEYCLOAK_ADMIN_USERNAME"
 app_keycloak_admin_password = "YOUR_KEYCLOAK_ADMIN_PASSWORD"
 
 # Let's Encrypt（acme_registration_email は必須）
-acme_registration_email = "YOUR_EMAIL_FOR_LETSENCRYPT"
+acme_registration_email = "your.acme.email@example.com"
 # 本番用のACMEサーバーURL
 acme_server_url       = "https://acme-v02.api.letsencrypt.org/directory"
 # 検証用のACMEサーバーURL（ブラウザで信頼されないことに注意）
@@ -37,13 +37,6 @@ agw_max_capacity  = 2
 agw_waf_enabled   = "Enabled"
 agw_waf_mode      = "Prevention"
 
-dns_resource_group_name = "oasismap-dns"
-root_domain_name        = "YOUR_DOMAIN_NAME"
-
-# 任意: 親ゾーンへの NS 委任（子ゾーンを親に委任する場合）。スタンドアロンゾーンのみなら省略（README §8.1）。
-# parent_domain_name                = "example.com"
-# parent_zone_resource_group_name   = "example-dns-rg"
-#
 # 参加同意書・フロント表示（README §6.1.2。任意で上書き）
 # terms_municipality_name = "【自治体名】"
 # terms_date              = "yyyy年mm月dd日"

@@ -25,19 +25,19 @@ resource "azurerm_linux_web_app" "frontend" {
   }
 
   app_settings = {
-    NEXTAUTH_URL                                  = "https://${var.root_domain_name}"
+    NEXTAUTH_URL                                  = "https://${data.terraform_remote_state.platform.outputs.root_domain_name}"
     NEXTAUTH_SECRET                               = "@Microsoft.KeyVault(SecretUri=${data.azurerm_key_vault.main.vault_uri}secrets/${azurerm_key_vault_secret.nextauth_secret.name})"
     NEXT_PUBLIC_MAP_DEFAULT_LATITUDE              = var.map_default_latitude
     NEXT_PUBLIC_MAP_DEFAULT_LONGITUDE             = var.map_default_longitude
     NEXT_PUBLIC_MAP_DEFAULT_ZOOM                  = var.map_default_zoom
     NEXT_PUBLIC_DEFAULT_ZOOM_FOR_COLLECTION_RANGE = var.default_zoom_for_collection_range
     NEXT_PUBLIC_DATASET_LIST_BY                   = var.dataset_list_by
-    NEXT_PUBLIC_BACKEND_URL                       = "https://backend.${var.root_domain_name}"
+    NEXT_PUBLIC_BACKEND_URL                       = "https://backend.${data.terraform_remote_state.platform.outputs.root_domain_name}"
     GENERAL_USER_KEYCLOAK_CLIENT_ID               = "general-user-client"
     GENERAL_USER_KEYCLOAK_CLIENT_SECRET           = "@Microsoft.KeyVault(SecretUri=${data.azurerm_key_vault.main.vault_uri}secrets/${azurerm_key_vault_secret.kc_general_user_client_secret.name})"
     ADMIN_KEYCLOAK_CLIENT_ID                      = "admin-client"
     ADMIN_KEYCLOAK_CLIENT_SECRET                  = "@Microsoft.KeyVault(SecretUri=${data.azurerm_key_vault.main.vault_uri}secrets/${azurerm_key_vault_secret.kc_admin_client_secret.name})"
-    KEYCLOAK_CLIENT_ISSUER                        = "https://keycloak.${var.root_domain_name}/realms/oasismap"
+    KEYCLOAK_CLIENT_ISSUER                        = "https://keycloak.${data.terraform_remote_state.platform.outputs.root_domain_name}/realms/oasismap"
     NEXT_PUBLIC_MAX_CLUSTER_RADIUS                = var.next_public_max_cluster_radius
   }
 
@@ -82,8 +82,8 @@ resource "azurerm_linux_web_app" "backend" {
     ORION_FIWARE_SERVICE      = var.orion_fiware_service
     ORION_FIWARE_SERVICE_PATH = var.orion_fiware_service_path
     ADMIN_KEYCLOAK_CLIENT_ID  = "admin-client"
-    KEYCLOAK_CLIENT_ISSUER    = "https://keycloak.${var.root_domain_name}/realms/oasismap"
-    FRONTEND_URL              = "https://${var.root_domain_name}"
+    KEYCLOAK_CLIENT_ISSUER    = "https://keycloak.${data.terraform_remote_state.platform.outputs.root_domain_name}/realms/oasismap"
+    FRONTEND_URL              = "https://${data.terraform_remote_state.platform.outputs.root_domain_name}"
     POSTGRES_HOST             = data.azurerm_postgresql_flexible_server.main.fqdn
     POSTGRES_PORT             = "5432"
     POSTGRES_USER             = "@Microsoft.KeyVault(SecretUri=${data.azurerm_key_vault.main.vault_uri}secrets/${azurerm_key_vault_secret.kc_db_username.name})"
@@ -132,8 +132,8 @@ resource "azurerm_linux_web_app" "keycloak" {
 
   app_settings = {
     # KC_HOSTNAME_URL, KEYCLOAK_CLIENT_SECRET など。シークレットは Key Vault 参照
-    KC_HOSTNAME             = "https://keycloak.${var.root_domain_name}"
-    KC_HOSTNAME_ADMIN       = "https://keycloak.${var.root_domain_name}"
+    KC_HOSTNAME             = "https://keycloak.${data.terraform_remote_state.platform.outputs.root_domain_name}"
+    KC_HOSTNAME_ADMIN       = "https://keycloak.${data.terraform_remote_state.platform.outputs.root_domain_name}"
     KC_HTTPS_PORT           = "443"
     KEYCLOAK_ADMIN          = "@Microsoft.KeyVault(SecretUri=${data.azurerm_key_vault.main.vault_uri}secrets/${azurerm_key_vault_secret.keycloak_admin.name})"
     KEYCLOAK_ADMIN_PASSWORD = "@Microsoft.KeyVault(SecretUri=${data.azurerm_key_vault.main.vault_uri}secrets/${azurerm_key_vault_secret.keycloak_admin_password.name})"

@@ -1,14 +1,6 @@
 # Application Gateway v2 / WAF。バックエンドは App Service の FQDN を指す。
 # HTTPS リスナーは Key Vault の証明書を使用（acme_agw_cert.tf）。HTTP(80) は HTTPS(443) へリダイレクト。
 
-resource "azurerm_public_ip" "agw" {
-  name                = "${var.prefix}-AGWIP"
-  location            = var.location
-  resource_group_name = data.terraform_remote_state.platform.outputs.resource_group_name
-  allocation_method   = "Static"
-  sku                 = "Standard"
-}
-
 data "azurerm_user_assigned_identity" "agw" {
   name                = data.terraform_remote_state.platform.outputs.user_assigned_identity_agw_name
   resource_group_name = data.terraform_remote_state.platform.outputs.resource_group_name
@@ -56,7 +48,7 @@ resource "azurerm_application_gateway" "main" {
 
   frontend_ip_configuration {
     name                 = "frontend-ip"
-    public_ip_address_id = azurerm_public_ip.agw.id
+    public_ip_address_id = data.terraform_remote_state.platform.outputs.agw_public_id
   }
 
   ssl_certificate {
@@ -99,7 +91,7 @@ resource "azurerm_application_gateway" "main" {
     frontend_port_name             = "https"
     protocol                       = "Https"
     ssl_certificate_name           = "agw-ssl"
-    host_name                      = var.root_domain_name
+    host_name                      = data.terraform_remote_state.platform.outputs.root_domain_name
   }
 
   http_listener {
@@ -108,7 +100,7 @@ resource "azurerm_application_gateway" "main" {
     frontend_port_name             = "https"
     protocol                       = "Https"
     ssl_certificate_name           = "agw-ssl"
-    host_name                      = "backend.${var.root_domain_name}"
+    host_name                      = "backend.${data.terraform_remote_state.platform.outputs.root_domain_name}"
   }
 
   http_listener {
@@ -117,7 +109,7 @@ resource "azurerm_application_gateway" "main" {
     frontend_port_name             = "https"
     protocol                       = "Https"
     ssl_certificate_name           = "agw-ssl"
-    host_name                      = "keycloak.${var.root_domain_name}"
+    host_name                      = "keycloak.${data.terraform_remote_state.platform.outputs.root_domain_name}"
     firewall_policy_id             = azurerm_web_application_firewall_policy.keycloak.id
   }
 

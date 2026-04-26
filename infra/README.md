@@ -15,14 +15,14 @@ Terraform は次の **3 レイヤー**を **platform → app → keycloak-realm*
 
 | レイヤー | 主なリソース |
 | --- | --- |
-| **platform** | リソースグループ、Virtual Network（DMZ / App / DB / Application Gateway 用サブネット）、Cosmos DB（Mongo API・サーバーレス）、PostgreSQL Flexible Server、Log Analytics、Key Vault、ユーザー割り当てマネージド ID など |
-| **app** | Azure Container Registry、Linux App Service（**frontend / backend / Keycloak**）、Azure Container Instances（**Orion、Cygnus**、Mongo/PostgreSQL 用ワンショット CLI、**Orion サブスクリプション登録用ワンショット** など）、Application Gateway（WAF）、DNS ゾーン・レコード、Let's Encrypt（ACME DNS-01）による証明書 |
+| **platform** | リソースグループ、Virtual Network（DMZ / App / DB / Application Gateway 用サブネット）、Cosmos DB（Mongo API・サーバーレス）、PostgreSQL Flexible Server、Log Analytics、Key Vault、DNS ゾーン・レコード、ユーザー割り当てマネージド ID など |
+| **app** | Azure Container Registry、Linux App Service（**frontend / backend / Keycloak**）、Azure Container Instances（**Orion、Cygnus**、Mongo/PostgreSQL 用ワンショット CLI、**Orion サブスクリプション登録用ワンショット** など）、Application Gateway（WAF）、Let's Encrypt（ACME DNS-01）による証明書 |
 | **keycloak-realm** | Keycloak のレルム・クライアント・IdP 等（**Keycloak Terraform プロバイダ**） |
 
 実行時の依存関係のイメージは次のとおりである。
 
-- **platform** がネットワーク・データストア・ログ基盤を用意する。
-- **app** が platform の remote state を参照し、アプリとゲートウェイ、ACI、DNS、証明書を構築する（初回などに **`az acr build`** によりイメージをビルド・プッシュする）。
+- **platform** がネットワーク・データストア・ログ基盤・DNSを用意する。
+- **app** が platform の remote state を参照し、アプリとゲートウェイ、ACI、証明書を構築する（初回などに **`az acr build`** によりイメージをビルド・プッシュする）。
 - **keycloak-realm** が app の remote state と Key Vault を参照し、HTTPS で Keycloak 管理 API に接続してレルムを構成する。
 
 ## 3. 前提ツール
@@ -149,6 +149,10 @@ Terraform は次の **3 レイヤー**を **platform → app → keycloak-realm*
 | postgres_admin_login | PostgreSQL Flexible Server の管理者ログイン名 | postgres |
 | postgres_admin_password | PostgreSQL Flexible Server の管理者パスワード | |
 | alert_mail_dest_address | 監視用メールアドレス | |
+| dns_resource_group_name | DNS リソースグループ名 | |
+| root_domain_name | ルートドメイン名 | |
+| parent_domain_name | 親ドメイン名<br/>親ゾーンに NS 委任が必要な場合に設定する。（README §8.1） | null |
+| parent_zone_resource_group_name | 親ドメインのリソースグループ名 <br/>親ゾーンに NS 委任が必要な場合に設定する。（README §8.1） | null | |
 
 #### 6.1.2. terraform/app/terraform.tfvars
 
@@ -168,11 +172,7 @@ Terraform は次の **3 レイヤー**を **platform → app → keycloak-realm*
 | app_keycloak_admin_password | Keycloak の管理者パスワード | |
 | acme_server_url | ACME サーバー URL | `https://acme-v02.api.letsencrypt.org/directory` |
 | acme_registration_email | ACME 登録メールアドレス | |
-| dns_resource_group_name | DNS リソースグループ名 | |
-| root_domain_name | ルートドメイン名 | |
-| parent_domain_name | 親ドメイン名<br/>親ゾーンに NS 委任が必要な場合に設定する。（README §8.1） | null |
-| parent_zone_resource_group_name | 親ドメインのリソースグループ名 <br/>親ゾーンに NS 委任が必要な場合に設定する。（README §8.1） | null |
-| terms_municipality_name | 参加同意書の自治体名 | 【自治体名】 |
+ terms_municipality_name | 参加同意書の自治体名 | 【自治体名】 |
 | terms_date | 参加同意書の日付 | yyyy年mm月dd日 |
 | terms_title_suffix | 参加同意書のタイトルの接尾辞 | （雛形） |
 
@@ -216,11 +216,15 @@ terraform apply
   - macOSからLinuxへなど、lockファイル作成時点からOSとCPUアーキテクチャを変更した場合、初回は当該アーキテクチャのプロバイダのハッシュ値がlockfileに存在しないため `Error: Required plugins are not installed` エラーが発生する。この場合、 `terraform init -backend-config=config.azurerm.tfbackend` を実行してlockfileに当該アーキテクチャのプロバイダのハッシュ値を追加する（プロバイダのバージョンは維持される）。
   - terraformのプロバイダをバージョンアップする場合は `terraform init -backend-config=config.azurerm.tfbackend -upgrade` を実行してlockfileを更新する。
 - 実行前の確認が必要ない場合は `terraform apply -auto-approve` としてもよい。
+- **DNS**
+  - `root_domain_name` と `dns_resource_group_name` で DNS ゾーンとレコードを管理する。
+  - 親ゾーンに **NS 委任**が必要な場合は、`parent_domain_name` と `parent_zone_resource_group_name` を設定する（`terraform.tfvars.example` のコメント参照）。
 
 ## 8. app レイヤー
 
 [7. platform レイヤー](#7-platform-レイヤー) が完了していることを前提とする。  
 ディレクトリ: **`infra/terraform/app`**（リポジトリルートからの相対パスで `../../../frontend` 等が解決されること）  
+
 
 実行例:
 
@@ -232,6 +236,7 @@ terraform apply
 ```
 
 ### 8.1. 注意事項
+- Let's Encrypt（ACME DNS-01）による証明書を取得する際に、platformレイヤで構築したDNSの浸透が遅れDNSチャレンジに失敗し、 `acme_certificate` がfailする場合がある。この場合、 `terraform apply` を再実行する。
 - `terraform init` の `-lockfile=readonly` オプションは、初期化時にlockファイルを更新しないため、以下の場合はオプションを変更すること。
   - macOSからLinuxへなど、lockファイル作成時点からOSとCPUアーキテクチャを変更した場合、初回は当該アーキテクチャのプロバイダのハッシュ値がlockfileに存在しないため `Error: Required plugins are not installed` エラーが発生する。この場合、 `terraform init -backend-config=config.azurerm.tfbackend` を実行してlockfileに当該アーキテクチャのプロバイダのハッシュ値を追加する（プロバイダのバージョンは維持される）。
   - terraformのプロバイダをバージョンアップする場合は `terraform init -backend-config=config.azurerm.tfbackend -upgrade` を実行してlockfileを更新する。
@@ -241,15 +246,12 @@ terraform apply
 - **Let's Encrypt**
   - 本番向け: `acme_server_url` は既定の本番 ACME ディレクトリ（`variables.tf` のコメント参照）。
   - 検証時: レート制限回避のため **ステージング URL** に切り替え可能である。ステージング証明書はブラウザで信頼されない。運用前に本番 URL へ戻し、再 apply する。
-- **DNS**
-  - `root_domain_name` と `dns_resource_group_name` で DNS ゾーンとレコードを管理する。
-  - 親ゾーンに **NS 委任**が必要な場合は、`parent_domain_name` と `parent_zone_resource_group_name` を設定する（`terraform.tfvars.example` のコメント参照）。
 - **Application Gateway（WAF）**  
   アプリがブロックされる場合は、まず **Detection** モードでログを確認するなど、従来どおり WAF とアプリの整合を取る（`agw_waf_mode` 等）。
 
 ### 8.2. apply 後に確認する出力例
 
-`terraform output` で、Application Gateway のパブリック IP、ルート URL、バックエンド／Keycloak の URL などが取得できる。DNS の A レコードや委任が正しければ、HTTPS で各サービスに到達できるようになる。
+`terraform output` で、ルート URL、バックエンド／Keycloak の URL などが取得できる。DNS の A レコードや委任が正しければ、HTTPS で各サービスに到達できるようになる。
 
 ## 9. keycloak-realm レイヤー
 

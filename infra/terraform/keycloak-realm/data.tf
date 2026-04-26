@@ -1,5 +1,15 @@
 # app 層の state を参照する。keycloak-realm 実行前に app を適用済みであること。
 
+data "terraform_remote_state" "platform" {
+  backend = "azurerm"
+  config = {
+    resource_group_name  = var.backend_resource_group_name
+    storage_account_name = var.backend_storage_account_name
+    container_name       = "platform"
+    key                  = "terraform.tfstate"
+  }
+}
+
 data "terraform_remote_state" "app" {
   backend = "azurerm"
   config = {

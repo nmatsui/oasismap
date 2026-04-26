@@ -60,7 +60,7 @@ resource "azurerm_web_application_firewall_policy" "default" {
         variable_name = "QueryString"
       }
       operator     = "Contains"
-      match_values = ["iss=https://keycloak.${var.root_domain_name}/realms/oasismap"]
+      match_values = ["iss=https://keycloak.${data.terraform_remote_state.platform.outputs.root_domain_name}/realms/oasismap"]
       transforms   = ["UrlDecode", "Lowercase"]
     }
   }
@@ -84,7 +84,7 @@ resource "azurerm_web_application_firewall_policy" "default" {
         variable_name = "QueryString"
       }
       operator     = "Contains"
-      match_values = ["iss=https://keycloak.${var.root_domain_name}/realms/oasismap"]
+      match_values = ["iss=https://keycloak.${data.terraform_remote_state.platform.outputs.root_domain_name}/realms/oasismap"]
       transforms   = ["UrlDecode", "Lowercase"]
     }
   }

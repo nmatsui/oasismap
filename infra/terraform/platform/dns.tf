@@ -36,6 +36,14 @@ resource "azurerm_dns_ns_record" "parent_delegation" {
   records             = azurerm_dns_zone.main.name_servers
 }
 
+resource "azurerm_public_ip" "agw" {
+  name                = "${var.prefix}-AGWIP"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.main.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
 resource "azurerm_dns_a_record" "root" {
   name                = "@"
   zone_name           = azurerm_dns_zone.main.name
@@ -59,3 +67,4 @@ resource "azurerm_dns_a_record" "keycloak" {
   ttl                 = 300
   records             = [azurerm_public_ip.agw.ip_address]
 }
+
