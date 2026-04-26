@@ -3,7 +3,7 @@
 
 resource "azurerm_web_application_firewall_policy" "keycloak" {
   name                = "${var.prefix}-WAFPolicy-keycloak"
-  resource_group_name = data.terraform_remote_state.platform.outputs.resource_group_name
+  resource_group_name = local.resource_group_name
   location            = var.location
 
   policy_settings {
@@ -29,7 +29,7 @@ resource "azurerm_web_application_firewall_policy" "keycloak" {
 
 resource "azurerm_web_application_firewall_policy" "default" {
   name                = "${var.prefix}-WAFPolicy-default"
-  resource_group_name = data.terraform_remote_state.platform.outputs.resource_group_name
+  resource_group_name = local.resource_group_name
   location            = var.location
 
   policy_settings {
@@ -60,7 +60,7 @@ resource "azurerm_web_application_firewall_policy" "default" {
         variable_name = "QueryString"
       }
       operator     = "Contains"
-      match_values = ["iss=https://keycloak.${data.terraform_remote_state.platform.outputs.root_domain_name}/realms/oasismap"]
+      match_values = ["iss=https://keycloak.${local.root_domain_name}/realms/oasismap"]
       transforms   = ["UrlDecode", "Lowercase"]
     }
   }
@@ -84,7 +84,7 @@ resource "azurerm_web_application_firewall_policy" "default" {
         variable_name = "QueryString"
       }
       operator     = "Contains"
-      match_values = ["iss=https://keycloak.${data.terraform_remote_state.platform.outputs.root_domain_name}/realms/oasismap"]
+      match_values = ["iss=https://keycloak.${local.root_domain_name}/realms/oasismap"]
       transforms   = ["UrlDecode", "Lowercase"]
     }
   }

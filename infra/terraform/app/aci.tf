@@ -3,7 +3,7 @@
 resource "azurerm_container_group" "orion" {
   name                                = "${var.prefix}-aci-orion"
   location                            = var.location
-  resource_group_name                 = data.terraform_remote_state.platform.outputs.resource_group_name
+  resource_group_name                 = local.resource_group_name
   ip_address_type                     = "Private"
   os_type                             = "Linux"
   subnet_ids                          = [data.terraform_remote_state.platform.outputs.subnet_app_id]
@@ -94,7 +94,7 @@ resource "azurerm_container_group" "orion" {
 resource "azurerm_container_group" "mongo_cli" {
   name                                = "${var.prefix}-aci-mongo-cli"
   location                            = var.location
-  resource_group_name                 = data.terraform_remote_state.platform.outputs.resource_group_name
+  resource_group_name                 = local.resource_group_name
   ip_address_type                     = "Private"
   os_type                             = "Linux"
   restart_policy                      = "Never"
@@ -156,7 +156,7 @@ resource "azurerm_container_group" "mongo_cli" {
 resource "azurerm_container_group" "postgres_cli" {
   name                                = "${var.prefix}-aci-postgres-cli"
   location                            = var.location
-  resource_group_name                 = data.terraform_remote_state.platform.outputs.resource_group_name
+  resource_group_name                 = local.resource_group_name
   ip_address_type                     = "Private"
   os_type                             = "Linux"
   restart_policy                      = "Never"
@@ -214,7 +214,7 @@ resource "azurerm_container_group" "postgres_cli" {
 resource "azurerm_container_group" "cygnus" {
   name                                = "${var.prefix}-aci-cygnus"
   location                            = var.location
-  resource_group_name                 = data.terraform_remote_state.platform.outputs.resource_group_name
+  resource_group_name                 = local.resource_group_name
   ip_address_type                     = "Private"
   os_type                             = "Linux"
   subnet_ids                          = [data.terraform_remote_state.platform.outputs.subnet_app_id]
@@ -316,7 +316,7 @@ resource "azurerm_container_group" "cygnus" {
 resource "azurerm_container_group" "orion_subscription" {
   name                = "${var.prefix}-aci-orion-subscription"
   location            = var.location
-  resource_group_name = data.terraform_remote_state.platform.outputs.resource_group_name
+  resource_group_name = local.resource_group_name
   ip_address_type     = "Private"
   os_type             = "Linux"
   restart_policy      = "Never"

@@ -1,6 +1,6 @@
 data "azurerm_key_vault" "main" {
   name                = data.terraform_remote_state.platform.outputs.key_vault_name
-  resource_group_name = data.terraform_remote_state.platform.outputs.resource_group_name
+  resource_group_name = local.resource_group_name
 }
 
 # Terraform で Key Vault のシークレットを取得し、ACI の secure_environment_variables に渡すため。

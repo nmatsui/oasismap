@@ -29,3 +29,8 @@ data "azurerm_key_vault_secret" "kc_admin_client_secret" {
   name         = "kc-admin-client-secret"
   key_vault_id = data.terraform_remote_state.app.outputs.key_vault_id
 }
+
+# 頻繁に使用するplatformのstateのエイリアス
+locals {
+  root_domain_name = data.terraform_remote_state.platform.outputs.root_domain_name
+}

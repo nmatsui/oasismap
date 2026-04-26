@@ -4,7 +4,7 @@
 resource "azurerm_monitor_metric_alert" "agw_unhealthy_hosts" {
   count               = length(data.terraform_remote_state.platform.outputs.action_group_id) > 0 ? 1 : 0
   name                = "${azurerm_application_gateway.main.name}-ALERT-UnHealthyHosts"
-  resource_group_name = data.terraform_remote_state.platform.outputs.resource_group_name
+  resource_group_name = local.resource_group_name
   scopes              = [azurerm_application_gateway.main.id]
   description         = "Application Gateway Unhealthy Host Count greater than 0"
   severity            = 1

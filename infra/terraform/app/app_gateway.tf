@@ -3,12 +3,12 @@
 
 data "azurerm_user_assigned_identity" "agw" {
   name                = data.terraform_remote_state.platform.outputs.user_assigned_identity_agw_name
-  resource_group_name = data.terraform_remote_state.platform.outputs.resource_group_name
+  resource_group_name = local.resource_group_name
 }
 
 resource "azurerm_application_gateway" "main" {
   name                              = "${var.prefix}-AGW"
-  resource_group_name               = data.terraform_remote_state.platform.outputs.resource_group_name
+  resource_group_name               = local.resource_group_name
   location                          = var.location
   http2_enabled                     = true
   zones                             = null
@@ -91,7 +91,7 @@ resource "azurerm_application_gateway" "main" {
     frontend_port_name             = "https"
     protocol                       = "Https"
     ssl_certificate_name           = "agw-ssl"
-    host_name                      = data.terraform_remote_state.platform.outputs.root_domain_name
+    host_name                      = local.root_domain_name
   }
 
   http_listener {
@@ -100,7 +100,7 @@ resource "azurerm_application_gateway" "main" {
     frontend_port_name             = "https"
     protocol                       = "Https"
     ssl_certificate_name           = "agw-ssl"
-    host_name                      = "backend.${data.terraform_remote_state.platform.outputs.root_domain_name}"
+    host_name                      = "backend.${local.root_domain_name}"
   }
 
   http_listener {
@@ -109,7 +109,7 @@ resource "azurerm_application_gateway" "main" {
     frontend_port_name             = "https"
     protocol                       = "Https"
     ssl_certificate_name           = "agw-ssl"
-    host_name                      = "keycloak.${data.terraform_remote_state.platform.outputs.root_domain_name}"
+    host_name                      = "keycloak.${local.root_domain_name}"
     firewall_policy_id             = azurerm_web_application_firewall_policy.keycloak.id
   }
 

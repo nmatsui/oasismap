@@ -24,17 +24,17 @@ output "agw_ssl_certificate_versionless_secret_id" {
 
 output "root_url" {
   description = "Root URL (https://root_domain_name) for NEXTAUTH_URL etc."
-  value       = "https://${data.terraform_remote_state.platform.outputs.root_domain_name}"
+  value       = "https://${local.root_domain_name}"
 }
 
 output "backend_url" {
   description = "Backend URL for app settings."
-  value       = "https://backend.${data.terraform_remote_state.platform.outputs.root_domain_name}"
+  value       = "https://backend.${local.root_domain_name}"
 }
 
 output "keycloak_url" {
   description = "Keycloak URL for KC_HOSTNAME_URL etc."
-  value       = "https://keycloak.${data.terraform_remote_state.platform.outputs.root_domain_name}"
+  value       = "https://keycloak.${local.root_domain_name}"
 }
 
 output "key_vault_id" {

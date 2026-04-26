@@ -9,7 +9,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orion_history_notify_
   count = local.orion_cygnus_alert_count
 
   name                 = "${azurerm_container_group.orion.name}-ALERT-HistoryNotifyFailure"
-  resource_group_name  = data.terraform_remote_state.platform.outputs.resource_group_name
+  resource_group_name  = local.resource_group_name
   location             = data.azurerm_log_analytics_workspace.main.location
   description          = "Orion: notification to Cygnus failed or non-numeric HTTP response on Notif delivered (history pipeline)."
   display_name         = "${azurerm_container_group.orion.name} History notify failure"
@@ -51,7 +51,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "cygnus_history_persis
   count = local.orion_cygnus_alert_count
 
   name                 = "${azurerm_container_group.cygnus.name}-ALERT-HistoryPersistenceFailure"
-  resource_group_name  = data.terraform_remote_state.platform.outputs.resource_group_name
+  resource_group_name  = local.resource_group_name
   location             = data.azurerm_log_analytics_workspace.main.location
   description          = "Cygnus: PostgreSQL persistence error (CygnusPersistenceError / connection error) on history sink."
   display_name         = "${azurerm_container_group.cygnus.name} History persistence failure"

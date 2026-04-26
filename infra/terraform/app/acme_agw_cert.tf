@@ -21,11 +21,11 @@ resource "acme_registration" "agw" {
 # 環境変数または az login で用意する。
 resource "acme_certificate" "agw" {
   account_key_pem = acme_registration.agw.account_key_pem
-  common_name     = data.terraform_remote_state.platform.outputs.root_domain_name
+  common_name     = local.root_domain_name
 
   subject_alternative_names = [
-    "keycloak.${data.terraform_remote_state.platform.outputs.root_domain_name}",
-    "backend.${data.terraform_remote_state.platform.outputs.root_domain_name}",
+    "keycloak.${local.root_domain_name}",
+    "backend.${local.root_domain_name}",
   ]
 
   dns_challenge {
