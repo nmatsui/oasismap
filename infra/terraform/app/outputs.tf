@@ -41,3 +41,21 @@ output "key_vault_id" {
   description = "Key Vault ID (for keycloak-realm layer to read client secrets)."
   value       = data.azurerm_key_vault.main.id
 }
+
+output "app_keycloak_admin" {
+  description = "Keycloak admin username (admin-cli)."
+  value       = var.app_keycloak_admin
+  sensitive   = true
+}
+
+output "app_keycloak_admin_password" {
+  description = "Keycloak admin password."
+  value       = var.app_keycloak_admin_password
+  sensitive   = true
+}
+
+output "acme_server_url" {
+  description = "ACME directory URL."
+  value       = var.acme_server_url
+}
+

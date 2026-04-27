@@ -147,7 +147,7 @@ Terraform は次の **3 レイヤー**を **platform → app → keycloak-realm*
 | --- | --- | --- |
 | resource_group_name | リソースグループ名 | |
 | prefix | リソース名の接頭辞 | |
-| location | リソースの場所<br/>（2026/4時点で `japaneast` ではApp Serviceが利用できないため） | japanwest |
+| location | リソースの場所<br/>（2026/4時点で `japaneast` ではApp Serviceが利用できないためデフォルト値は `japanwest`） | japanwest |
 | postgres_admin_login | PostgreSQL Flexible Server の管理者ログイン名 | postgres |
 | postgres_admin_password | PostgreSQL Flexible Server の管理者パスワード | |
 | alert_mail_dest_address | 監視用メールアドレス | |
@@ -164,8 +164,6 @@ Terraform は次の **3 レイヤー**を **platform → app → keycloak-realm*
 | --- | --- | --- |
 | backend_resource_group_name | リモート state 用リソースグループ名<br/> `app/config.azurerm.tfbackend` の `resource_group_name` の値を自動設定| |
 | backend_storage_account_name | リモート state 用ストレージアカウント名<br/> `app/config.azurerm.tfbackend` の `storage_account_name` の値を自動設定| |
-| prefix | リソース名の接頭辞 | |
-| location | リソースの場所<br/> `platform/terraform.tfvars` の`location` と一致させること | japanwest |
 | app_frontend_name | Frontend アプリケーション名（英数字とハイフンのみ） | |
 | app_frontend_nextauth_secret | Frontend アプリケーションの NextAuth シークレット | |
 | app_backend_name | Backend アプリケーション名（英数字とハイフンのみ） | |
@@ -186,8 +184,6 @@ Terraform は次の **3 レイヤー**を **platform → app → keycloak-realm*
 | --- | --- | --- |
 | backend_resource_group_name | リモート state 用リソースグループ名<br/> `keycloak-realm/config.azurerm.tfbackend` の `resource_group_name` の値を自動設定| |
 | backend_storage_account_name | リモート state 用ストレージアカウント名<br/> `keycloak-realm/config.azurerm.tfbackend` の `storage_account_name` の値を自動設定| |
-| app_keycloak_admin | Keycloak の管理者ユーザー名 <br/> `app/terraform.tfvars` の `app_keycloak_admin` と一致させる | |
-| app_keycloak_admin_password | Keycloak の管理者パスワード <br/> `app/terraform.tfvars` の `app_keycloak_admin_password` と一致させる| |
 | keycloak_google_client_id | Google クライアント ID | |
 | keycloak_google_client_secret | Google クライアントシークレット | |
 
@@ -289,7 +285,7 @@ terraform apply
 
 1. ブラウザから `https://keycloak.<設定したルートドメイン>` にアクセスし、keycloak の管理コンソールに接続する
 2. 「Administration Console」をクリックする
-3. `app_keycloak_admin` と `app_keycloak_admin_password` でログインする（`infra/terraform/app/terraform.tfvars` および `infra/terraform/keycloak-realm/terraform.tfvars` に同一の値を設定すること）
+3. `app_keycloak_admin` と `app_keycloak_admin_password` でログインする
 4. `realm` から `oasismap` を選択する
 5. 左のメニューバーから `Users` を選択
 6. `Add User` を選択する

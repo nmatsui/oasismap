@@ -1,10 +1,10 @@
 locals {
-  acr_name = "${var.prefix}acr${substr(md5(data.terraform_remote_state.platform.outputs.resource_group_name), 0, 8)}"
+  acr_name = "${data.terraform_remote_state.platform.outputs.prefix}acr${substr(md5(data.terraform_remote_state.platform.outputs.resource_group_name), 0, 8)}"
 }
 
 resource "azurerm_container_registry" "main" {
   name                = local.acr_name
-  location            = var.location
+  location            = local.location
   resource_group_name = local.resource_group_name
   sku                 = "Basic"
   admin_enabled       = true

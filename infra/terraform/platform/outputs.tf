@@ -155,3 +155,13 @@ output "root_domain_name" {
   value       = var.root_domain_name
 }
 
+output "prefix" {
+  description = "Prefix for resource names"
+  value       = var.prefix
+}
+
+output "location" {
+  description = "Azure region"
+  value       = var.location
+}
+

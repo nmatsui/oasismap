@@ -10,24 +10,6 @@ variable "backend_storage_account_name" {
   type        = string
 }
 
-variable "app_keycloak_admin" {
-  description = "Keycloak admin username (admin-cli). Use same value as app layer."
-  type        = string
-  sensitive   = true
-}
-
-variable "app_keycloak_admin_password" {
-  description = "Keycloak admin password. Use same value as app layer."
-  type        = string
-  sensitive   = true
-}
-
-variable "acme_server_url" {
-  description = "ACME directory URL. When staging, tls_insecure_skip_verify is enabled for Keycloak provider."
-  type        = string
-  default     = "https://acme-v02.api.letsencrypt.org/directory"
-}
-
 # --- レルム ---
 variable "keycloak_realm_name" {
   description = "Realm name to create (oasismap)."

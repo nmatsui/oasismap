@@ -11,17 +11,6 @@ variable "backend_storage_account_name" {
   type        = string
 }
 
-variable "prefix" {
-  description = "Prefix for resource names (must match platform)."
-  type        = string
-}
-
-variable "location" {
-  description = "Azure region (must match platform)."
-  type        = string
-  default     = "japanwest"
-}
-
 # --- App Service プラン ---
 variable "app_service_plan_sku" {
   description = "App Service Plan SKU (e.g. P1v3, B2)."

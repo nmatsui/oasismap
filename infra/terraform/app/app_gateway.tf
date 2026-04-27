@@ -7,9 +7,9 @@ data "azurerm_user_assigned_identity" "agw" {
 }
 
 resource "azurerm_application_gateway" "main" {
-  name                              = "${var.prefix}-AGW"
+  name                              = "${local.prefix}-AGW"
   resource_group_name               = local.resource_group_name
-  location                          = var.location
+  location                          = local.location
   http2_enabled                     = true
   zones                             = null
   force_firewall_policy_association = true

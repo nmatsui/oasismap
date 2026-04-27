@@ -3,8 +3,8 @@
 # FQDN は Application Gateway のバックエンドで使用する。
 
 resource "azurerm_linux_web_app" "frontend" {
-  name                            = "${var.prefix}-${var.app_frontend_name}-${substr(md5(local.resource_group_name), 0, 8)}"
-  location                        = var.location
+  name                            = "${local.prefix}-${var.app_frontend_name}-${substr(md5(local.resource_group_name), 0, 8)}"
+  location                        = local.location
   resource_group_name             = local.resource_group_name
   service_plan_id                 = azurerm_service_plan.main.id
   key_vault_reference_identity_id = data.azurerm_user_assigned_identity.frontend.id
@@ -55,8 +55,8 @@ resource "azurerm_linux_web_app" "frontend" {
 }
 
 resource "azurerm_linux_web_app" "backend" {
-  name                            = "${var.prefix}-${var.app_backend_name}-${substr(md5(local.resource_group_name), 0, 8)}"
-  location                        = var.location
+  name                            = "${local.prefix}-${var.app_backend_name}-${substr(md5(local.resource_group_name), 0, 8)}"
+  location                        = local.location
   resource_group_name             = local.resource_group_name
   service_plan_id                 = azurerm_service_plan.main.id
   key_vault_reference_identity_id = data.azurerm_user_assigned_identity.backend.id
@@ -109,8 +109,8 @@ resource "azurerm_linux_web_app" "backend" {
 }
 
 resource "azurerm_linux_web_app" "keycloak" {
-  name                            = "${var.prefix}-${var.app_keycloak_name}-${substr(md5(local.resource_group_name), 0, 8)}"
-  location                        = var.location
+  name                            = "${local.prefix}-${var.app_keycloak_name}-${substr(md5(local.resource_group_name), 0, 8)}"
+  location                        = local.location
   resource_group_name             = local.resource_group_name
   service_plan_id                 = azurerm_service_plan.main.id
   key_vault_reference_identity_id = data.azurerm_user_assigned_identity.keycloak.id
