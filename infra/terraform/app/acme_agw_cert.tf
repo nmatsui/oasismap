@@ -21,20 +21,20 @@ resource "acme_registration" "agw" {
 # 環境変数または az login で用意する。
 resource "acme_certificate" "agw" {
   account_key_pem = acme_registration.agw.account_key_pem
-  common_name     = var.root_domain_name
+  common_name     = local.root_domain_name
 
   subject_alternative_names = [
-    "keycloak.${var.root_domain_name}",
-    "backend.${var.root_domain_name}",
+    "keycloak.${local.root_domain_name}",
+    "backend.${local.root_domain_name}",
   ]
 
   dns_challenge {
     provider = "azuredns"
     config = {
       # Azure DNS ゾーンが存在するリソースグループ（app 層の DNS 専用 RG）
-      AZURE_RESOURCE_GROUP = azurerm_resource_group.dns.name
+      AZURE_RESOURCE_GROUP = data.terraform_remote_state.platform.outputs.dns_resource_group_name
       # ゾーン名（省略時は common_name から解決される場合あり。明示すると確実）
-      AZURE_ZONE_NAME = azurerm_dns_zone.main.name
+      AZURE_ZONE_NAME = data.terraform_remote_state.platform.outputs.dns_zone_name
       # その他 AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET は
       # 環境変数で渡す（azurerm プロバイダと同じ認証情報でよい）
     }
@@ -42,8 +42,6 @@ resource "acme_certificate" "agw" {
 
   # Key Vault は PFX インポートを標準でサポート。パスワード空で P12 を生成し、そのままインポートする。
   certificate_p12_password = ""
-
-  depends_on = [azurerm_dns_a_record.root, azurerm_dns_a_record.backend, azurerm_dns_a_record.keycloak]
 }
 
 # 取得した証明書を platform の Key Vault に PFX（certificate_p12）でインポートする。

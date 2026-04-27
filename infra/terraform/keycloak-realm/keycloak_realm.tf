@@ -3,7 +3,7 @@
 # 認証フロー「general user browser」およびユーザープロファイルは本ファイルで実装。
 
 locals {
-  keycloak_client_base_url = "https://${data.terraform_remote_state.app.outputs.root_domain_name}"
+  keycloak_client_base_url = "https://${local.root_domain_name}"
   _cities_json             = jsondecode(file("${path.module}/../../../keycloak/cities.json"))
   prefecture_options       = keys(local._cities_json)
   city_options             = flatten(values(local._cities_json))

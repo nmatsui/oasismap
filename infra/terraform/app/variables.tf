@@ -11,17 +11,6 @@ variable "backend_storage_account_name" {
   type        = string
 }
 
-variable "prefix" {
-  description = "Prefix for resource names (must match platform)."
-  type        = string
-}
-
-variable "location" {
-  description = "Azure region (must match platform)."
-  type        = string
-  default     = "japaneast"
-}
-
 # --- App Service プラン ---
 variable "app_service_plan_sku" {
   description = "App Service Plan SKU (e.g. P1v3, B2)."
@@ -249,36 +238,3 @@ variable "agw_ssl_certificate_name" {
   default     = "agw-ssl"
 }
 
-# --- DNS（app 層の専用 RG とゾーン）---
-variable "dns_resource_group_name" {
-  description = "Name of the DNS-dedicated resource group (e.g. prefix-dns)."
-  type        = string
-}
-
-variable "root_domain_name" {
-  description = "Root domain name for the DNS zone and A records (e.g. example.com)."
-  type        = string
-}
-
-# 任意: 設定時は親ゾーンに NS 委任を作成する（旧 ARM 方式の子ゾーン）。
-variable "parent_domain_name" {
-  description = "Parent DNS zone name (e.g. example.com). When set, an NS record is created in the parent zone to delegate this root_domain_name. Leave null or empty for standalone zone only."
-  type        = string
-  default     = null
-
-  validation {
-    condition     = var.parent_domain_name == null || trimspace(var.parent_domain_name) == "" || (var.root_domain_name != var.parent_domain_name && endswith(var.root_domain_name, ".${var.parent_domain_name}"))
-    error_message = "When parent_domain_name is set, root_domain_name must be a subdomain of it (e.g. app.example.com when parent is example.com)."
-  }
-}
-
-variable "parent_zone_resource_group_name" {
-  description = "Resource group name where the parent DNS zone exists. Required when parent_domain_name is set. May be the same as dns_resource_group_name if the parent zone is in the same RG."
-  type        = string
-  default     = null
-
-  validation {
-    condition     = var.parent_domain_name == null || trimspace(var.parent_domain_name) == "" || (var.parent_zone_resource_group_name != null && trimspace(var.parent_zone_resource_group_name) != "")
-    error_message = "parent_zone_resource_group_name must be set when parent_domain_name is set and non-empty."
-  }
-}

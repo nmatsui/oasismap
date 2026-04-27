@@ -5,11 +5,7 @@
 backend_resource_group_name   = "YOUR_TF_STATE_RESOURCE_GROUP_NAME"
 backend_storage_account_name  = "YOUR_TF_STATE_STORAGE_ACCOUNT_NAME"
 
-prefix   = "oasismap"
-# Azure リージョンの識別名（platform と一致させる）
-location = "japaneast"
-
-app_service_plan_sku      = "P1v2"
+app_service_plan_sku      = "P1v3"
 app_frontend_name            = "YOUR_UNIQUE_FRONTEND_APP_NAME"
 app_frontend_nextauth_secret = "CHANGE_TO_RANDOM_STRING_FOR_NEXTAUTH_SECRET"
 app_backend_name             = "YOUR_UNIQUE_BACKEND_APP_NAME"
@@ -20,8 +16,11 @@ app_keycloak_admin          = "YOUR_KEYCLOAK_ADMIN_USERNAME"
 app_keycloak_admin_password = "YOUR_KEYCLOAK_ADMIN_PASSWORD"
 
 # Let's Encrypt（acme_registration_email は必須）
-acme_registration_email = "YOUR_EMAIL_FOR_LETSENCRYPT"
-# acme_server_url       = "https://acme-v02.api.letsencrypt.org/directory"  # 既定は本番。検証時は README §8.1 のステージング URL
+acme_registration_email = "your.acme.email@example.com"
+# 本番用のACMEサーバーURL
+acme_server_url       = "https://acme-v02.api.letsencrypt.org/directory"
+# 検証用のACMEサーバーURL（ブラウザで信頼されないことに注意）
+# acme_server_url             = "https://acme-staging-v02.api.letsencrypt.org/directory"
 
 aci_orion_image_tag  = "orion:latest"
 aci_cygnus_image_tag = "cygnus:latest"
@@ -34,14 +33,8 @@ agw_max_capacity  = 2
 agw_waf_enabled   = "Enabled"
 agw_waf_mode      = "Prevention"
 
-dns_resource_group_name = "oasismap-dns"
-root_domain_name        = "YOUR_DOMAIN_NAME"
-
 # 参加同意書・フロント表示（README §6.1.2。任意で上書き）
 # terms_municipality_name = "【自治体名】"
 # terms_date              = "yyyy年mm月dd日"
 # terms_title_suffix      = "（雛形）"
 
-# 任意: 親ゾーンへの NS 委任（子ゾーンを親に委任する場合）。スタンドアロンゾーンのみなら省略（README §8.1）。
-# parent_domain_name                = "example.com"
-# parent_zone_resource_group_name   = "example-dns-rg"

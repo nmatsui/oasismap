@@ -36,19 +36,19 @@ function Invoke-AzIgnoreNotFound {
     return $result
 }
 
-# Azure CLI を使用して、tfstate を保存するリソースグループを作成する
+# Azure CLIを使用してAzureへログインする
 try {
     az login --tenant $env:AZURE_TENANT_ID
 } catch {
     Write-Error "Failed to login to Azure"
 }
 
+# Azure CLIを使用してリソースグループを作成する
 $resourceGroupExists = Invoke-AzIgnoreNotFound { az group show --name $env:TF_STATE_RESOURCE_GROUP_NAME 2>$null }
 if (-not $resourceGroupExists) {
     az group create --name $env:TF_STATE_RESOURCE_GROUP_NAME --location $env:TF_STATE_LOCATION
 }
 
-# Azure CLI を使用して、tfstate を保存するストレージアカウントを作成する
 # リソースグループ名から MD5 ハッシュを生成し、ストレージ名の suffix として使用する
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($env:TF_STATE_RESOURCE_GROUP_NAME)
 $hash = [System.Security.Cryptography.MD5]::Create().ComputeHash($bytes)
@@ -80,7 +80,7 @@ function Get-GeneratedStorageAccountName {
 $storageAccountName = Get-GeneratedStorageAccountName -Prefix $env:TF_STATE_PREFIX -ResourceGroupMd5Hash $storageAccountNameSuffix
 Write-Host "Creating storage account... $storageAccountName"
 
-# Azure CLI を使用して、ストレージアカウントを作成する
+# Azure CLI を使用して、tfstate を保存するストレージアカウントを作成する
 try {
     az storage account create `
         --name $storageAccountName `
@@ -88,6 +88,7 @@ try {
         --location $env:TF_STATE_LOCATION `
         --sku "Standard_LRS" `
         --kind "StorageV2" `
+        --allow-blob-public-access "false" `
         --min-tls-version "TLS1_2" `
         --https-only "true"
 } catch {
@@ -142,3 +143,35 @@ Write-Host "Backend configuration files created:"
 Write-Host "  - $platformBackendPath"
 Write-Host "  - $appBackendPath"
 Write-Host "  - $keycloakRealmBackendPath"
+
+# 存在しない場合はplatform、app、keycloak-realmのterraform.tfvarsを作成する
+$platformTfvarsExamplePath = Join-Path $scriptDir "platform\terraform.tfvars.example"
+$appTfvarsExamplePath = Join-Path $scriptDir "app\terraform.tfvars.example"
+$keycloakRealmTfvarsExamplePath = Join-Path $scriptDir "keycloak-realm\terraform.tfvars.example"
+$platformTfvarsPath = Join-Path $scriptDir "platform\terraform.tfvars"
+$appTfvarsPath = Join-Path $scriptDir "app\terraform.tfvars"
+$keycloakRealmTfvarsPath = Join-Path $scriptDir "keycloak-realm\terraform.tfvars"
+
+if (-not (Test-Path $platformTfvarsPath)) {
+  Copy-Item $platformTfvarsExamplePath $platformTfvarsPath
+}
+
+if (-not (Test-Path $appTfvarsPath)) {
+  Copy-Item $appTfvarsExamplePath $appTfvarsPath
+}
+
+if (-not (Test-Path $keycloakRealmTfvarsPath)) {
+  Copy-Item $keycloakRealmTfvarsExamplePath $keycloakRealmTfvarsPath
+}
+
+# appとkeycloak-realmのterraform.tfvarsにtfstateの情報を書き込む
+if (Test-Path $appTfvarsPath) {
+  (Get-Content $appTfvarsPath) -replace 'backend_resource_group_name\s*=\s*".*"', "backend_resource_group_name   = `"$env:TF_STATE_RESOURCE_GROUP_NAME`"" | Set-Content $appTfvarsPath
+  (Get-Content $appTfvarsPath) -replace 'backend_storage_account_name\s*=\s*".*"', "backend_storage_account_name  = `"$storageAccountName`"" | Set-Content $appTfvarsPath
+}
+
+if (Test-Path $keycloakRealmTfvarsPath) {
+  (Get-Content $keycloakRealmTfvarsPath) -replace 'backend_resource_group_name\s*=\s*".*"', "backend_resource_group_name   = `"$env:TF_STATE_RESOURCE_GROUP_NAME`"" | Set-Content $keycloakRealmTfvarsPath
+  (Get-Content $keycloakRealmTfvarsPath) -replace 'backend_storage_account_name\s*=\s*".*"', "backend_storage_account_name  = `"$storageAccountName`"" | Set-Content $keycloakRealmTfvarsPath
+}
+

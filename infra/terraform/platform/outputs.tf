@@ -124,3 +124,44 @@ output "action_group_id" {
   description = "Monitor Action Group ID for alert notifications (empty when alert_mail_dest_address is not set)."
   value       = length(azurerm_monitor_action_group.main) > 0 ? azurerm_monitor_action_group.main[0].id : ""
 }
+
+output "agw_public_ip" {
+  description = "Application Gateway public IP (for DNS A records and root/backend/keycloak URLs)."
+  value       = azurerm_public_ip.agw.ip_address
+}
+
+output "agw_public_id" {
+  description = "Application Gateway public IP id"
+  value       = azurerm_public_ip.agw.id
+}
+
+output "dns_parent_delegation_enabled" {
+  description = "Whether NS delegation was created in the parent zone (true when parent_domain_name is set)."
+  value       = local.create_parent_delegation
+}
+
+output "dns_resource_group_name" {
+  description = "DNS-dedicated resource group name."
+  value       = azurerm_resource_group.dns.name
+}
+
+output "dns_zone_name" {
+  description = "DNS zone name (root_domain_name)."
+  value       = azurerm_dns_zone.main.name
+}
+
+output "root_domain_name" {
+  description = "Root domain name (for keycloak-realm layer)."
+  value       = var.root_domain_name
+}
+
+output "prefix" {
+  description = "Prefix for resource names"
+  value       = var.prefix
+}
+
+output "location" {
+  description = "Azure region"
+  value       = var.location
+}
+

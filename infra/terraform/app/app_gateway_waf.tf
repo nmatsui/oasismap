@@ -2,9 +2,9 @@
 # 既定ポリシー: frontend/backend（ゲートウェイレベル）。Keycloak 用ポリシー: keycloak リスナーのみ（WAF 無効）。
 
 resource "azurerm_web_application_firewall_policy" "keycloak" {
-  name                = "${var.prefix}-WAFPolicy-keycloak"
-  resource_group_name = data.terraform_remote_state.platform.outputs.resource_group_name
-  location            = var.location
+  name                = "${local.prefix}-WAFPolicy-keycloak"
+  resource_group_name = local.resource_group_name
+  location            = local.location
 
   policy_settings {
     enabled                          = false
@@ -28,9 +28,9 @@ resource "azurerm_web_application_firewall_policy" "keycloak" {
 }
 
 resource "azurerm_web_application_firewall_policy" "default" {
-  name                = "${var.prefix}-WAFPolicy-default"
-  resource_group_name = data.terraform_remote_state.platform.outputs.resource_group_name
-  location            = var.location
+  name                = "${local.prefix}-WAFPolicy-default"
+  resource_group_name = local.resource_group_name
+  location            = local.location
 
   policy_settings {
     enabled                          = var.agw_waf_enabled == "Enabled"
@@ -60,7 +60,7 @@ resource "azurerm_web_application_firewall_policy" "default" {
         variable_name = "QueryString"
       }
       operator     = "Contains"
-      match_values = ["iss=https://keycloak.${var.root_domain_name}/realms/oasismap"]
+      match_values = ["iss=https://keycloak.${local.root_domain_name}/realms/oasismap"]
       transforms   = ["UrlDecode", "Lowercase"]
     }
   }
@@ -84,7 +84,7 @@ resource "azurerm_web_application_firewall_policy" "default" {
         variable_name = "QueryString"
       }
       operator     = "Contains"
-      match_values = ["iss=https://keycloak.${var.root_domain_name}/realms/oasismap"]
+      match_values = ["iss=https://keycloak.${local.root_domain_name}/realms/oasismap"]
       transforms   = ["UrlDecode", "Lowercase"]
     }
   }

@@ -22,3 +22,11 @@ data "terraform_remote_state" "platform" {
 #   data.terraform_remote_state.platform.outputs.cosmosdb_account_name
 #   data.terraform_remote_state.platform.outputs.postgres_fqdn
 # など。
+
+# 頻繁に使用するplatformのstateのエイリアス
+locals {
+  resource_group_name = data.terraform_remote_state.platform.outputs.resource_group_name
+  root_domain_name = data.terraform_remote_state.platform.outputs.root_domain_name
+  prefix = data.terraform_remote_state.platform.outputs.prefix
+  location = data.terraform_remote_state.platform.outputs.location
+}

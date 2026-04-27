@@ -25,7 +25,7 @@ provider "keycloak" {
   url                      = data.terraform_remote_state.app.outputs.keycloak_url
   realm                    = "master"
   client_id                = "admin-cli"
-  username                 = var.app_keycloak_admin
-  password                 = var.app_keycloak_admin_password
-  tls_insecure_skip_verify = var.acme_server_url == "https://acme-staging-v02.api.letsencrypt.org/directory"
+  username                 = local.app_keycloak_admin
+  password                 = local.app_keycloak_admin_password
+  tls_insecure_skip_verify = local.acme_server_url == "https://acme-staging-v02.api.letsencrypt.org/directory"
 }

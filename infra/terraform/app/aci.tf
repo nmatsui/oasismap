@@ -1,9 +1,9 @@
 # Azure Container Instances: Orion, Cygnus。platform の subnet_app を使った VNet 統合。
 
 resource "azurerm_container_group" "orion" {
-  name                                = "${var.prefix}-aci-orion"
-  location                            = var.location
-  resource_group_name                 = data.terraform_remote_state.platform.outputs.resource_group_name
+  name                                = "${local.prefix}-aci-orion"
+  location                            = local.location
+  resource_group_name                 = local.resource_group_name
   ip_address_type                     = "Private"
   os_type                             = "Linux"
   subnet_ids                          = [data.terraform_remote_state.platform.outputs.subnet_app_id]
@@ -92,9 +92,9 @@ resource "azurerm_container_group" "orion" {
 # ワンショット: MongoDB インデックス作成（location.coords の 2dsphere 含む）後に終了。
 # 注: ACI の要件でコンテナポートを公開する必要がある。ダミーポートは 65534。
 resource "azurerm_container_group" "mongo_cli" {
-  name                                = "${var.prefix}-aci-mongo-cli"
-  location                            = var.location
-  resource_group_name                 = data.terraform_remote_state.platform.outputs.resource_group_name
+  name                                = "${local.prefix}-aci-mongo-cli"
+  location                            = local.location
+  resource_group_name                 = local.resource_group_name
   ip_address_type                     = "Private"
   os_type                             = "Linux"
   restart_policy                      = "Never"
@@ -154,9 +154,9 @@ resource "azurerm_container_group" "mongo_cli" {
 # ワンショット: PostgreSQL データベース初期化後に終了。
 # 注: ACI の要件でコンテナポートを公開する必要がある。ダミーポートは 65534。
 resource "azurerm_container_group" "postgres_cli" {
-  name                                = "${var.prefix}-aci-postgres-cli"
-  location                            = var.location
-  resource_group_name                 = data.terraform_remote_state.platform.outputs.resource_group_name
+  name                                = "${local.prefix}-aci-postgres-cli"
+  location                            = local.location
+  resource_group_name                 = local.resource_group_name
   ip_address_type                     = "Private"
   os_type                             = "Linux"
   restart_policy                      = "Never"
@@ -212,9 +212,9 @@ resource "azurerm_container_group" "postgres_cli" {
 }
 
 resource "azurerm_container_group" "cygnus" {
-  name                                = "${var.prefix}-aci-cygnus"
-  location                            = var.location
-  resource_group_name                 = data.terraform_remote_state.platform.outputs.resource_group_name
+  name                                = "${local.prefix}-aci-cygnus"
+  location                            = local.location
+  resource_group_name                 = local.resource_group_name
   ip_address_type                     = "Private"
   os_type                             = "Linux"
   subnet_ids                          = [data.terraform_remote_state.platform.outputs.subnet_app_id]
@@ -314,9 +314,9 @@ resource "azurerm_container_group" "cygnus" {
 # ワンショット: Orion サブスクリプション登録（happiness エンティティ変更 → Cygnus 通知）。
 # VNet 内で実行し、プライベート IP で Orion / Cygnus に到達する。パブリックイメージのみ使用。
 resource "azurerm_container_group" "orion_subscription" {
-  name                = "${var.prefix}-aci-orion-subscription"
-  location            = var.location
-  resource_group_name = data.terraform_remote_state.platform.outputs.resource_group_name
+  name                = "${local.prefix}-aci-orion-subscription"
+  location            = local.location
+  resource_group_name = local.resource_group_name
   ip_address_type     = "Private"
   os_type             = "Linux"
   restart_policy      = "Never"
