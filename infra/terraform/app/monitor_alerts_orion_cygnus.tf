@@ -5,6 +5,11 @@ locals {
   orion_cygnus_alert_count = length(data.terraform_remote_state.platform.outputs.action_group_id) > 0 ? 1 : 0
 }
 
+resource "time_sleep" "wait_for_orion_logs" {
+  depends_on = [azurerm_container_group.orion]
+  create_duration = "180s"
+}
+
 resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orion_history_notify_failure" {
   count = local.orion_cygnus_alert_count
 
@@ -45,6 +50,13 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "orion_history_notify_
   }
 
   auto_mitigation_enabled = true
+
+  depends_on = [time_sleep.wait_for_orion_logs]
+}
+
+resource "time_sleep" "wait_for_cygnus_logs" {
+  depends_on = [azurerm_container_group.cygnus]
+  create_duration = "180s"
 }
 
 resource "azurerm_monitor_scheduled_query_rules_alert_v2" "cygnus_history_persistence_failure" {
@@ -85,4 +97,6 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "cygnus_history_persis
   }
 
   auto_mitigation_enabled = true
+
+  depends_on = [time_sleep.wait_for_cygnus_logs]
 }
