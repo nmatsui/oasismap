@@ -92,3 +92,14 @@ Remove-Item -Path $keycloakRealmBackendPath
 Remove-Item -Path $appBackendPath
 Remove-Item -Path $platformBackendPath
 
+$platformDotTerraformPath = Join-Path $scriptDir "platform\.terraform"
+$appDotTerraformPath = Join-Path $scriptDir "app\.terraform"
+$keycloakRealmDotTerraformPath = Join-Path $scriptDir "keycloak-realm\.terraform"
+
+Remove-Item -Path $keycloakRealmDotTerraformPath -Recurse -Force
+Remove-Item -Path $appDotTerraformPath -Recurse -Force
+Remove-Item -Path $platformDotTerraformPath -Recurse -Force
+
+
+
+

@@ -80,3 +80,7 @@ rm keycloak-realm/config.azurerm.tfbackend
 rm app/config.azurerm.tfbackend
 rm platform/config.azurerm.tfbackend
 
+rm -rf keycloak-realm/.terraform
+rm -rf app/.terraform
+rm -rf platform/.terraform
+

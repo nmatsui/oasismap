@@ -3,7 +3,6 @@
 # 認証フロー「general user browser」およびユーザープロファイルは本ファイルで実装。
 
 locals {
-  keycloak_client_base_url = "https://${local.root_domain_name}"
   prefecture_options       = jsondecode(file("./prefectures.json")).prefectures
   city_options             = jsondecode(file("./cities.json")).cities
 }
@@ -314,7 +313,7 @@ resource "keycloak_openid_client" "general_user_client" {
   access_type                  = "CONFIDENTIAL"
   standard_flow_enabled        = true
   direct_access_grants_enabled = true
-  client_secret_wo             = data.azurerm_key_vault_secret.kc_general_user_client_secret.value
+  client_secret_wo             = local.general_user_client_secret
   client_secret_wo_version     = 1
   valid_redirect_uris = [
     "${local.keycloak_client_base_url}/api/auth/callback/general-user-keycloak-client"
@@ -352,7 +351,7 @@ resource "keycloak_openid_client" "admin_client" {
   access_type                  = "CONFIDENTIAL"
   standard_flow_enabled        = true
   direct_access_grants_enabled = true
-  client_secret_wo             = data.azurerm_key_vault_secret.kc_admin_client_secret.value
+  client_secret_wo             = local.admin_client_secret
   client_secret_wo_version     = 1
   valid_redirect_uris = [
     "${local.keycloak_client_base_url}/api/auth/callback/admin-keycloak-client"
