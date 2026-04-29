@@ -10,10 +10,14 @@
   - [OASIS Mapの始め方 クイックスタート](#oasis-mapの始め方-クイックスタート)
     - [概要](#概要)
     - [インストール方法](#インストール方法)
-    - [基本的な使い方](#基本的な使い方)
-      - [自治体管理者向け](#自治体管理者向け)
-      - [利用者向け](#利用者向け)
-      - [アプリケーション停止方法](#アプリケーション停止方法)
+    - [事前準備](#事前準備)
+    - [システム起動](#システム起動)
+    - [起動後設定](#起動後設定)
+
+  - [基本的な使い方](#基本的な使い方)
+    - [自治体管理者向け](#自治体管理者向け)
+    - [利用者向け](#利用者向け)
+    - [アプリケーション停止方法](#アプリケーション停止方法)
   - [利用バージョン](#利用バージョン)
   - [ライセンス](#ライセンス)
 
@@ -46,27 +50,25 @@
     cd oasismap
     ```
 
-3. MongoDBとPostgreSQLのユーザー、パスワードおよび地図の初期パラメータ値(緯度、経度、ズーム値)、KeyCloakの設定を.envに設定
+### 事前準備
 
-    ```sh
-    ~/oasismap$ cp _env .env
-    ~/oasismap$ vi .env
-    ```
+#### Google Cloud
 
-    ※以下の環境変数は後ほど設定
-      - `KC_HOSTNAME_URL`
-      - `KC_HOSTNAME_ADMIN_URL`
-      - `KEYCLOAK_CLIENT_ISSUER`
-      - `GENERAL_USER_KEYCLOAK_CLIENT_SECRET`
-      - `ADMIN_KEYCLOAK_CLIENT_SECRET`
+1. [Google Cloud](https://console.cloud.google.com/apis/credentials)に接続
+2. `プロジェクトを選択` から新しいプロジェクトを作成
+3. `認証情報を作成` を選択して `OAuth クライアント ID` を作成
+4. アプリケーションの種類に `ウェブアプリケーション` を選択して作成
+5. クライアントID、シークレットが記されたjsonをダウンロード（一度しかダウンロードできないので注意）
 
-4. ngrokのアカウントを登録する  
+#### ngrok 事前準備
+
+1. ngrokのアカウントを登録する  
     https://ngrok.com/
 
-5. 手順に従いngrokをインストールする  
+2. 手順に従いngrokをインストールする  
     https://ngrok.com/docs/getting-started/
 
-6. ngrok起動
+3. ngrok起動
 
     ```sh
     ~/oasismap$ ngrok http 8080
@@ -91,21 +93,8 @@
 
 7. `Forwarding` から https:// で始まるURLを取得する
 
-8. 環境変数 `KC_HOSTNAME_URL` `KC_HOSTNAME_ADMIN_URL` `KEYCLOAK_CLIENT_ISSUER` に上記のURLを設定する
 
-    ```sh
-    KC_HOSTNAME_URL=https://xxxx-xxx-xxx-x-xx.ngrok-free.app
-    KC_HOSTNAME_ADMIN_URL=https://xxxx-xxx-xxx-x-xx.ngrok-free.app
-    KEYCLOAK_CLIENT_ISSUER=https://xxxx-xxx-xxx-x-xx.ngrok-free.app/realms/oasismap
-    ```
-
-9. Dockerコンテナを展開
-
-    ```sh
-    ~/oasismap$ docker compose up -d
-    ```
-
-### 位置情報の利用について
+#### 位置情報の利用について
 
 OASIS Mapでは現在の位置情報を利用します。  
 但し `http` で動作させた場合は実際の位置情報ではなく、仮の位置情報が使われます。  
@@ -114,97 +103,75 @@ OASIS Mapでは現在の位置情報を利用します。
 
 仮の位置情報で問題ない場合は本手順はスキップしてください。
 
-### Google Cloud 事前準備
+### システム起動
 
-1. [Google Cloud](https://console.cloud.google.com/apis/credentials)に接続
-2. `プロジェクトを選択` から新しいプロジェクトを作成
-3. `認証情報を作成` を選択して `OAuth クライアント ID` を作成
-4. アプリケーションの種類に `ウェブアプリケーション` を選択して作成
-5. クライアントID、シークレットを `keycloak/variables.json` の `GoogleClientID` `GoogleClientSecret` に転記
-
-### Keycloak 自動設定
-
-1. keycloakディレクトリに移動
+1. `_env` をコピーして `.env` を準備します。
 
     ```sh
-    cd keycloak
+    ~/oasismap$ cp _env .env
+    ~/oasismap$ vi .env
     ```
 
-2. `formatting-variables.sh` を実行して都道府県名/市区町村名の情報を `variables.json` に設定
+2. MongoDBとPostgreSQLのユーザー、パスワードを設定します。
 
     ```sh
-    ~/keycloak$ bash formatting-variables.sh cities.json
+    MONGOUSERNAME=example
+    MONGOPASSWORD=CHANGE_TO_RANDOM_STRING
+    POSTGREUSER=example
+    POSTGREPASSWORD=CHANGE_TO_RANDOM_STRING
     ```
 
-3. 自動設定スクリプトで利用する環境変数を設定ファイルから読み込む
+3. 必要に応じて地図の初期パラメータ値(緯度、経度、ズーム値)を設定します。
+
+
+4. Keycloakのパラメータを設定します。
+    * keycloakの管理者ユーザー名（`KEYCLOAK_ADMIN`）とパスワード（`KEYCLOAK_ADMIN_PASSWORD`）
+    * 次のコマンドを実行して `general-user-client` のsecretを生成し、 `KEYCLOAK_ADMIN_PASSWORD` に設定します。
+
+        ```sh
+        ~/oasismap$ cat /dev/urandom | tr -dc 'A-Za-z0-9' | fold -w 32 | head -n 1
+        ```
+    * 次のコマンドを再度実行して `admin-client` のsecretを生成し、 `ADMIN_KEYCLOAK_CLIENT_SECRET` に設定します。
+
+        ```sh
+        ~/oasismap$ cat /dev/urandom | tr -dc 'A-Za-z0-9' | fold -w 32 | head -n 1
+        ```
+    * `KC_HOSTNAME_URL` `KC_HOSTNAME_ADMIN_URL` `KEYCLOAK_CLIENT_ISSUER` にngrokから割り当てられたURLを設定します。
+
+      ```sh
+      KC_HOSTNAME_URL=https://xxxx-xxx-xxx-x-xx.ngrok-free.app
+      KC_HOSTNAME_ADMIN_URL=https://xxxx-xxx-xxx-x-xx.ngrok-free.app
+      KEYCLOAK_CLIENT_ISSUER=https://xxxx-xxx-xxx-x-xx.ngrok-free.app/realms/oasismap
+      ```
+    * Google Cloudから得たクライアントIDとクライアントシークレットをそれぞれ `GOOGLE_CLIENT_ID` と `GOOGLE_CLIENT_SECRET` に設定します。
+
+5. Dockerコンテナを展開します。
 
     ```sh
-    ~/keycloak$ source ./.env
-    ~/keycloak$ echo $KEYCLOAK_ADMIN
-    ~/keycloak$ echo $KEYCLOAK_ADMIN_PASSWORD
+    ~/oasismap$ docker compose up -d
     ```
 
-4. keycloakディレクトリのパスを取得
-
-    ```sh
-    ~/keycloak$ pwd
-    ```
-
-5. 以下のコマンドを実行  
-    ※ 4で取得したkeycloakディレクトリのパスに書き換えて実行すること
-
-    ```sh
-    ~/keycloak$ docker run --network oasismap_backend-network --volume $(pwd):/etc/newman/keycloak \
-    postman/newman:latest run --bail --environment /etc/newman/keycloak/variables.json \
-    --env-var "KeycloakAdminUser=$KEYCLOAK_ADMIN" \
-    --env-var "KeycloakAdminPassword=$KEYCLOAK_ADMIN_PASSWORD" \
-    /etc/newman/keycloak/postman-collection.json
-    ```
-
-### 環境変数の準備と追加
-
-1. ブラウザから `http://Dockerホスト名:8080`でアクセスします。
-2. 「Administration Console」をクリック
-3. 環境変数 `KEYCLOAK_ADMIN` `KEYCLOAK_ADMIN_PASSWORD` に指定した認証情報でログイン
+### 起動後設定
 
 #### Google CloudにリダイレクトURIを設定
 
-1. `realm` から `oasismap` を選択
-2. 左のメニューバーから `Identity providers` を選択
-3. `google` をクリック
-4. `Redirect URI` の値をコピーして控えておく
-5. [Google Cloud](https://console.cloud.google.com/apis/credentials)に接続
-6. 事前準備にて作成した認証情報を選択
-7. `承認済みのリダイレクトURI` に控えておいた `Redirect URI` を転記して保存
+1. ブラウザから `http://Dockerホスト名:8080` でkeycloakの管理画面にアクセスします。
+2. 「Administration Console」をクリック
+3. 環境変数 KEYCLOAK_ADMIN KEYCLOAK_ADMIN_PASSWORD に指定した認証情報でログイン
+4. `realm` から `oasismap` を選択
+5. 左のメニューバーから `Identity providers` を選択
+6. `google` をクリック
+7. `Redirect URI` の値をコピーして控えておく
+8. [Google Cloud](https://console.cloud.google.com/apis/credentials)に接続
+9. 事前準備にて作成した認証情報を選択
+10. `承認済みのリダイレクトURI` に控えておいた `Redirect URI` を転記して保存
 
-#### 利用者向けクライアントシークレットの設定
+#### orionにサブスクリプション設定を行う
 
-1. `realm` から `oasismap` を選択
-2. 左のメニューバーから `client` をクリック
-3. `general-user-client` をクリック
-4. `Credentials` をクリック
-5. `Client Secret` の値を環境変数 `GENERAL_USER_KEYCLOAK_CLIENT_SECRET` に転記
-
-#### 自治体管理者向けクライアントシークレットの設定
-
-1. `realm` に `oasismap` を選択
-2. 左のメニューバーから `client` をクリック
-3. `admin-client` をクリック
-4. `Credentials` をクリック
-5. `Client Secret` の値を環境変数 `ADMIN_KEYCLOAK_CLIENT_SECRET` に転記
-
-#### コンテナを再起動して環境変数を反映させる
-
-```sh
-~/oasismap$ docker compose up -d frontend
-```
-
-### orionにサブスクリプション設定を行う
-
-1. バックエンドのコンテナにはいる
+1. orionのコンテナにはいる
 
     ```sh
-    docker compose -f docker-compose-dev.yml exec backend bash
+    docker compose exec orion bash
     ```
 
 2. 以下コマンドを実行してorionにサブスクリプションの設定を行う
@@ -237,13 +204,13 @@ OASIS Mapでは現在の位置情報を利用します。
       'http://orion:1026/v2/subscriptions'
     ```
 
-### 基本的な使い方
+## 基本的な使い方
 
-#### 自治体管理者向け
+### 自治体管理者向け
 
-##### 自治体管理者アカウントの準備
+#### 自治体管理者アカウントの準備
 
-1. ブラウザから `http://Dockerホスト名:8080` でアクセスします
+1. ブラウザから `http://Dockerホスト名:8080` でkeycloakの管理画面にアクセスします
 2. 「Administration Console」をクリック
 3. 環境変数 `KEYCLOAK_ADMIN` `KEYCLOAK_ADMIN_PASSWORD` に指定した認証情報でログイン
 4. `realm` から `oasismap` を選択
@@ -255,21 +222,20 @@ OASIS Mapでは現在の位置情報を利用します。
 9. パスワード入力後, `Temporary` のチェックを外して `Save`
 10. `Save password` から保存
 
-##### 自治体管理者機能の使い方
+#### 自治体管理者機能の使い方
 
 1. ブラウザから `http://Dockerホスト名:3000/admin/login` でアクセスします  
   ![admin-user-1](doc/img/admin-user-1.png)  
 
 2. 自治体管理者用アカウントでログインします  
   ![admin-user-2](doc/img/admin-user-2.png)  
-  * 一般利用者と同様に住所や年代等の入力画面が表示された場合は、ダミーのデータを入力してください
 
 3. 右端のハンバーガーメニューの `データエクスポート` から幸福度情報をダウンロードできます  
   ![admin-user-3](doc/img/admin-user-3.png)  
 
-#### 利用者向け
+### 利用者向け
 
-##### ログイン
+#### ログイン
 
 1. ブラウザから `http://Dockerホスト名:3000` でアクセスします  
   ![general-user-1](doc/img/general-user-1.png)  
@@ -281,7 +247,7 @@ OASIS Mapでは現在の位置情報を利用します。
   ※重複するニックネームは登録できません  
   ![general-user-3](doc/img/general-user-3.png)  
 
-##### 幸福度の入力
+#### 幸福度の入力
 
 1. 画面下の `幸福度の入力` をクリックします  
   ![general-user-4-1](doc/img/general-user-4-1.png)  
@@ -289,7 +255,7 @@ OASIS Mapでは現在の位置情報を利用します。
 2. 任意の項目にチェックを入れて `幸福度を送信` をクリックします  
   ![general-user-4-2](doc/img/general-user-4-2.png)  
 
-##### 利用者幸福度の表示
+#### 利用者幸福度の表示
   
 1. 右端のハンバーガーメニューをクリックします  
   ![general-user-5-1](doc/img/general-user-5-1.png)  
@@ -300,7 +266,7 @@ OASIS Mapでは現在の位置情報を利用します。
 3. `利用者の幸福度` が地図上とグラフに表示されます  
   ![general-user-5-3](doc/img/general-user-5-3.png)  
 
-##### 全体幸福度の表示
+#### 全体幸福度の表示
   
 1. 右端のハンバーガーメニューをクリックします  
   ![general-user-5-1](doc/img/general-user-5-1.png)  
@@ -311,7 +277,7 @@ OASIS Mapでは現在の位置情報を利用します。
 3. `全体の幸福度` が地図上とグラフに表示されます  
   ![general-user-6-3](doc/img/general-user-6-3.png)  
 
-#### アプリケーション停止方法
+### アプリケーション停止方法
 
 - コンテナを停止
 
