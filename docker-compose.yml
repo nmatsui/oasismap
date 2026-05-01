@@ -253,6 +253,39 @@ services:
       start_period: 10s
     restart: always
 
+  terraform-cli:
+    build:
+      context: ./terraform-cli
+      dockerfile: Dockerfile
+      args:
+        TF_VERSION: 1.14.9
+    hostname: terraform-cli
+    container_name: terraform-cli
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    environment:
+      - "TF_VAR_keycloak_url=http://keycloak:8080"
+      - "TF_VAR_keycloak_client_base_url=http://localhost:3000"
+      - "TF_VAR_keycloak_admin=${KEYCLOAK_ADMIN}"
+      - "TF_VAR_keycloak_admin_password=${KEYCLOAK_ADMIN_PASSWORD}"
+      - "TF_VAR_keycloak_general_user_client_secret=${GENERAL_USER_KEYCLOAK_CLIENT_SECRET}"
+      - "TF_VAR_keycloak_admin_client_secret=${ADMIN_KEYCLOAK_CLIENT_SECRET}"
+      - "TF_VAR_keycloak_google_client_id=${GOOGLE_CLIENT_ID}"
+      - "TF_VAR_keycloak_google_client_secret=${GOOGLE_CLIENT_SECRET}"
+      - "TF_VAR_keycloak_realm_name=oasismap"
+      - "TF_VAR_backend_resource_group_name=dummy"
+      - "TF_VAR_backend_storage_account_name=dummy"
+    volumes:
+      - ./terraform-cli/terraform/main.tf:/home/tfuser/main.tf:ro
+      - ./infra/terraform/keycloak-realm/variables.tf:/home/tfuser/variables.tf:ro
+      - ./infra/terraform/keycloak-realm/keycloak_realm.tf:/home/tfuser/keycloak_realm.tf:ro
+      - ./infra/terraform/keycloak-realm/prefectures.json:/home/tfuser/prefectures.json:ro
+      - ./infra/terraform/keycloak-realm/cities.json:/home/tfuser/cities.json:ro
+    networks:
+      - backend-network
+    entrypoint: ["bash", "/home/tfuser/entrypoint.sh"]
+
 networks:
   backend-network:
     driver: bridge
